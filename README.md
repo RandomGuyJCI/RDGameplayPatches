@@ -14,4 +14,5 @@
 For more information, check out the [BepInEx installation guide](https://docs.bepinex.dev/articles/user_guide/installation/index.html).
 
 *Note: For best results, it is recommended to set your in-game difficulty to Hard, even if the plugin's not directly affected by it.*
-*You can also toggle the plugin any time by going to `BepInEx/Config/com.rhythmdr.veryhard.cfg` and changing the `EnableVeryHard` parameter.*
+
+*You can also configure the plugin any time by going to `BepInEx/Config/com.rhythmdr.veryhard.cfg` and changing the `VeryHardMode` parameter.*
