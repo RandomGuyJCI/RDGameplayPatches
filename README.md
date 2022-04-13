@@ -4,7 +4,7 @@ Adds several patches to Rhythm Doctor gameplay.
 ## Features
 
 ### 2P
-- **PersistentP1AndP2Positions**: Reverts back to old game behavior and makes P1 and P2 positions persistent between level restarts.
+- **Persistent P1 And P2 Positions**: Reverts back to old game behavior and makes P1 and P2 positions persistent between level restarts.
 
 ### Difficulty
 - **Very Hard**: Adds a Very Hard difficulty to Rhythm Doctor, changing its hit margins to 25 ms. Configurable per player.
