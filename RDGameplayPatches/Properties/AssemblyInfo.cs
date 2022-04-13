@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("RDVeryHard")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("RDGameplayPatches")]
+[assembly: AssemblyDescription("Gameplay patches for Rhythm Doctor")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("RDVeryHard")]
+[assembly: AssemblyProduct("RDGameplayPatches")]
 [assembly: AssemblyCopyright("Copyright ©  2022")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
