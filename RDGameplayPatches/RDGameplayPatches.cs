@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace RDGameplayPatches
 {
-    [BepInPlugin("com.rhythmdr.gameplaypatches", "Rhythm Doctor Gameplay Patches", "1.2.0")]
+    [BepInPlugin("com.rhythmdr.gameplaypatches", "Rhythm Doctor Gameplay Patches", "1.2.1")]
     [BepInProcess("Rhythm Doctor.exe")]
     public class RDGameplayPatches : BaseUnityPlugin
     {
