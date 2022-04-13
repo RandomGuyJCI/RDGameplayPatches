@@ -117,7 +117,7 @@ namespace RDGameplayPatches
                 }
 
                 double audioPos = __instance.conductor.audioPos;
-                float timeOffset = (float) (___beatReleaseTime - audioPos);
+                float timeOffset = (float) (audioPos - ___beatReleaseTime);
                 
                 if (GC.showAbsoluteOffsets)
                 {
