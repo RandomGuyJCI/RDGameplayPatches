@@ -36,7 +36,7 @@ namespace RDGameplayPatches
                 "Shows the millisecond offset and counts the number of offset frames on hold releases.");
 
             configPersistentP1AndP2Positions = Config.Bind("2P", "PersistentP1AndP2Positions", true,
-                "Reverts back to old game behavior and maes P1 and P2 positions persistent between level restarts.");
+                "Reverts back to old game behavior and makes P1 and P2 positions persistent between level restarts.");
 
             switch (configVeryHardMode.Value)
             {
