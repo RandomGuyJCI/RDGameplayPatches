@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace RDGameplayPatches
 {
-    [BepInPlugin("com.rhythmdr.gameplaypatches", "Rhythm Doctor Gameplay Patches", "1.3.2")]
+    [BepInPlugin("com.rhythmdr.gameplaypatches", "Rhythm Doctor Gameplay Patches", "1.3.3")]
     [BepInProcess("Rhythm Doctor.exe")]
     public class RDGameplayPatches : BaseUnityPlugin
     {
@@ -86,6 +86,14 @@ namespace RDGameplayPatches
                 {
                     __result = 0.025f;
                 }
+            }
+
+            [HarmonyPrefix]
+            [HarmonyPatch(typeof(RDHitStrip), "SetWidth")]
+            public static bool Prefix(RDHitStrip __instance)
+            {
+                __instance.quad.size = new Vector2(8f, __instance.quad.size.y);
+                return false;
             }
         }
 
