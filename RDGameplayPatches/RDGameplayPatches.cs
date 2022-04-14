@@ -64,10 +64,14 @@ namespace RDGameplayPatches
             if (configCountOffsetOnRelease.Value)
             {
                 Harmony.CreateAndPatchAll(typeof(CountOffsetOnRelease));
-                Logger.LogMessage("Releases are now counted!");
             }
 
-            Logger.LogMessage("Plugin enabled!");
+            Logger.LogInfo("Plugin enabled!");
+        }
+
+        void OnDestroy()
+        {
+            Harmony.UnpatchAll();
         }
 
         public static class VeryHard
