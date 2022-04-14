@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace RDGameplayPatches
 {
-    [BepInPlugin("com.rhythmdr.gameplaypatches", "Rhythm Doctor Gameplay Patches", "1.3.0")]
+    [BepInPlugin("com.rhythmdr.gameplaypatches", "Rhythm Doctor Gameplay Patches", "1.3.2")]
     [BepInProcess("Rhythm Doctor.exe")]
     public class RDGameplayPatches : BaseUnityPlugin
     {
@@ -29,7 +29,7 @@ namespace RDGameplayPatches
             configVeryHardMode = Config.Bind("Difficulty", "VeryHardMode", VeryHardMode.None,
                 "Sets the player(s) in which Very Hard difficulty is enabled. Not affected by the difficulty setting in Rhythm Doctor when enabled.");
 
-            configAccurateReleaseMargins = Config.Bind("Holds", "AccurateRelaseMargins", true,
+            configAccurateReleaseMargins = Config.Bind("Holds", "AccurateRelaseMargins", false,
                 "Changes the hold release margins to better reflect the player difficulty, including Very Hard.");
 
             configCountOffsetOnRelease = Config.Bind("Holds", "CountOffsetOnRelease", true,
@@ -113,9 +113,11 @@ namespace RDGameplayPatches
         {
             [HarmonyPrefix]
             [HarmonyPatch(typeof(scrPlayerbox), "SpaceBarReleased")]
-            public static bool Prefix(scrPlayerbox __instance, double ___beatReleaseTime, scrRowEntities ___ent, bool ___beatBeingHeld, bool cpuTriggered)
+            public static bool Prefix(RDPlayer player, bool cpuTriggered, scrPlayerbox __instance, double ___beatReleaseTime, scrRowEntities ___ent, bool ___beatBeingHeld)
             {
-                if (!___beatBeingHeld && !cpuTriggered)
+                RDPlayer currentPlayer = ___ent.row.playerProp.GetCurrentPlayer();
+
+                if ((player != currentPlayer) || (!___beatBeingHeld && !cpuTriggered))
                 {
                     return true;
                 }
@@ -125,7 +127,6 @@ namespace RDGameplayPatches
                 
                 if (GC.showAbsoluteOffsets)
                 {
-                    RDPlayer currentPlayer = ___ent.row.playerProp.GetCurrentPlayer();
                     int offsetFrames = Mathf.RoundToInt(timeOffset * 60);
                     if (RDC.auto || Mathf.Abs(offsetFrames) <= 1)
                     {
@@ -133,7 +134,7 @@ namespace RDGameplayPatches
                     }
                     if (currentPlayer != RDPlayer.CPU)
                     {
-                        __instance.game.mistakesManager.AddAbsoluteMistake(RDPlayer.P1, offsetFrames);
+                        __instance.game.mistakesManager.AddAbsoluteMistake(currentPlayer, offsetFrames);
                     }
                 }
 
