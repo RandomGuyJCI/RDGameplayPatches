@@ -113,9 +113,9 @@ namespace RDGameplayPatches
         {
             [HarmonyPrefix]
             [HarmonyPatch(typeof(scrPlayerbox), "SpaceBarReleased")]
-            public static bool Prefix(scrPlayerbox __instance, double ___beatReleaseTime, scrRowEntities ___ent, bool ___beatBeingHeld)
+            public static bool Prefix(scrPlayerbox __instance, double ___beatReleaseTime, scrRowEntities ___ent, bool ___beatBeingHeld, bool cpuTriggered)
             {
-                if (!___beatBeingHeld)
+                if (!___beatBeingHeld && !cpuTriggered)
                 {
                     return true;
                 }
