@@ -30,7 +30,7 @@ Adds several patches to Rhythm Doctor gameplay.
 5. Unzip the file you downloaded into your Rhythm Doctor installation folder. You should now have a file at `BepInEx/Plugins/RDGameplayPatches/RDGameplayPatches.dll`.
 6. Configure the plugin as needed in `BepInEx/config/com.rhythmdr.gameplaypatches.cfg`.
 7. Launch the game, and the plugin should automatically enable.
-8. Optional: Install the [BepInEx Configuration Manager](https://github.com/BepInEx/BepInEx.ConfigurationManager) to configure the mod with a GUI.
+8. **Optional:** To enable reloading the plugin on the fly, download and extract the [BepInEx ScriptEngine](https://github.com/BepInEx/BepInEx.Debug/releases/latest) plugin into your RD folder. Create a `scripts` folder in `BepInEx` then move `RDGameplayPatches.dll` to that folder. You should now be able to reload the plugin by pressing `F6` in-game (hotkey configurable in `BepInEx/config/com.bepis.bepinex.scriptengine`).
 
 For more information, check out the [BepInEx installation guide](https://docs.bepinex.dev/articles/user_guide/installation/index.html).
 
