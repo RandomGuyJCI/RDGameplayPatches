@@ -88,12 +88,15 @@ namespace RDGameplayPatches
                 }
             }
 
-            [HarmonyPrefix]
-            [HarmonyPatch(typeof(RDHitStrip), "SetWidth")]
-            public static bool Prefix(RDHitStrip __instance)
+            [HarmonyPatch(typeof(RDHitStrip), "Setup")]
+            public static void Postfix(RDPlayer player, RDHitStrip __instance)
             {
-                __instance.quad.size = new Vector2(8f, __instance.quad.size.y);
-                return false;
+                if ((configVeryHardMode.Value == VeryHardMode.Both) ||
+                    (player == RDPlayer.P1 && configVeryHardMode.Value == VeryHardMode.P1) ||
+                    (player == RDPlayer.P2 && configVeryHardMode.Value == VeryHardMode.P2))
+                {
+                    __instance.quad.size = new Vector2(8f, __instance.quad.size.y);
+                }
             }
         }
 
