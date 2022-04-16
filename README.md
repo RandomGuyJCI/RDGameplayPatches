@@ -33,5 +33,3 @@ Adds several patches to Rhythm Doctor gameplay.
 8. **Optional:** To enable reloading the plugin on the fly, download and extract the [BepInEx ScriptEngine](https://github.com/BepInEx/BepInEx.Debug/releases/latest) plugin into your RD folder. Create a `scripts` folder in `BepInEx` then move `RDGameplayPatches.dll` to that folder. You should now be able to reload the plugin by pressing `F6` in-game (hotkey configurable in `BepInEx/config/com.bepis.bepinex.scriptengine`).
 
 For more information, check out the [BepInEx installation guide](https://docs.bepinex.dev/articles/user_guide/installation/index.html).
-
-*Note: For best results with Very Hard difficulty, it is recommended to set your in-game difficulty to Hard, even if the patch is not directly affected by it.*
