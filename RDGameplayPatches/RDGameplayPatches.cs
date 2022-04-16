@@ -52,19 +52,13 @@ namespace RDGameplayPatches
             }
 
             if (configAccurateReleaseMargins.Value)
-            {
                 Harmony.CreateAndPatchAll(typeof(AccurateReleaseMargins));
-            }
-
-            if (configPersistentP1AndP2Positions.Value)
-            {
-                Harmony.CreateAndPatchAll(typeof(PersistentP1AndP2Positions));
-            }
 
             if (configCountOffsetOnRelease.Value)
-            {
                 Harmony.CreateAndPatchAll(typeof(CountOffsetOnRelease));
-            }
+
+            if (configPersistentP1AndP2Positions.Value)
+                Harmony.CreateAndPatchAll(typeof(PersistentP1AndP2Positions));
 
             Logger.LogInfo("Plugin enabled!");
         }
@@ -76,27 +70,32 @@ namespace RDGameplayPatches
 
         public static class VeryHard
         {
+            private static bool isP1VeryHard = configVeryHardMode.Value == VeryHardMode.P1 || configVeryHardMode.Value == VeryHardMode.Both;
+            private static bool isP2VeryHard = configVeryHardMode.Value == VeryHardMode.P2 || configVeryHardMode.Value == VeryHardMode.Both;
+
             [HarmonyPostfix]
             [HarmonyPatch(typeof(scnGame), "GetHitMargin")]
             public static void Postfix(RDPlayer player, ref float __result)
             {
-                if ((configVeryHardMode.Value == VeryHardMode.Both) ||
-                    (player == RDPlayer.P1 && configVeryHardMode.Value == VeryHardMode.P1) ||
-                    (player == RDPlayer.P2 && configVeryHardMode.Value == VeryHardMode.P2))
-                {
+                if ((player == RDPlayer.P1 && isP1VeryHard) || (player == RDPlayer.P2 && isP2VeryHard))
                     __result = 0.025f;
-                }
             }
 
             [HarmonyPatch(typeof(RDHitStrip), "Setup")]
             public static void Postfix(RDPlayer player, RDHitStrip __instance)
             {
-                if ((configVeryHardMode.Value == VeryHardMode.Both) ||
-                    (player == RDPlayer.P1 && configVeryHardMode.Value == VeryHardMode.P1) ||
-                    (player == RDPlayer.P2 && configVeryHardMode.Value == VeryHardMode.P2))
-                {
+                if ((player == RDPlayer.P1 && isP1VeryHard) || (player == RDPlayer.P2 && isP2VeryHard))
                     __instance.quad.size = new Vector2(8f, __instance.quad.size.y);
-                }
+            }
+
+            [HarmonyPatch(typeof(scnGame), "Awake")]
+            public static void Postfix()
+            {
+                if (isP1VeryHard)
+                    scnGame.p1DefibMode = DefibMode.Hard;
+
+                if (isP2VeryHard)
+                    scnGame.p2DefibMode = DefibMode.Hard;
             }
         }
 
@@ -114,9 +113,7 @@ namespace RDGameplayPatches
             {
                 RDPlayer currentPlayer = ___ent.row.playerProp.GetCurrentPlayer();
                 if ((currentPlayer == RDPlayer.P2 ? scnGame.p2DefibMode : scnGame.p1DefibMode) == DefibMode.Unmissable)
-                {
                     __result = OffsetType.Perfect;
-                }
             }
         }
 
@@ -129,9 +126,7 @@ namespace RDGameplayPatches
                 RDPlayer currentPlayer = ___ent.row.playerProp.GetCurrentPlayer();
 
                 if ((player != currentPlayer) || (!___beatBeingHeld && !cpuTriggered))
-                {
                     return true;
-                }
 
                 double audioPos = __instance.conductor.audioPos;
                 float timeOffset = (float) (audioPos - ___beatReleaseTime);
@@ -139,24 +134,22 @@ namespace RDGameplayPatches
                 if (GC.showAbsoluteOffsets)
                 {
                     int offsetFrames = Mathf.RoundToInt(timeOffset * 60);
+
                     if (RDC.auto || Mathf.Abs(offsetFrames) <= 1)
-                    {
                         offsetFrames = 0;
-                    }
+
                     if (currentPlayer != RDPlayer.CPU)
-                    {
                         __instance.game.mistakesManager.AddAbsoluteMistake(currentPlayer, offsetFrames);
-                    }
                 }
 
                 if (GC.d_showMarginsNumerically)
                 {
                     float timeOffsetInMilliseconds = timeOffset * 1000f;
                     string offsetMs = timeOffsetInMilliseconds.ToString("N3");
+
                     if (timeOffsetInMilliseconds >= 0)
-                    {
                         offsetMs = "+" + offsetMs;
-                    }
+
                     HUD.status = "[ " + offsetMs + " " + RDString.Get("editor.unit.ms") + " ]";
                 }
 
@@ -166,6 +159,7 @@ namespace RDGameplayPatches
 
         public static class PersistentP1AndP2Positions
         {
+            [HarmonyTranspiler]
             [HarmonyPatch(typeof(scnGame), "Start")]
             public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
             {
