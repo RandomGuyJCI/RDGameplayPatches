@@ -167,6 +167,14 @@ namespace RDGameplayPatches
                     .MatchForward(false,
                         new CodeMatch(OpCodes.Call, AccessTools.Method(typeof(RDInput), "SwapP1AndP2Controls")))
                     .SetOpcodeAndAdvance(OpCodes.Nop)
+                    .MatchForward(false,
+                    // Start of stupid fix for Level_Intro issue (this took me FIVE DAYS to debug)
+                        new CodeMatch(OpCodes.Ldstr, "Level_"))
+                    .Advance(3)
+                    .InsertAndAdvance(
+                        new CodeInstruction(OpCodes.Ldstr, ", Assembly-CSharp"),
+                        new CodeInstruction(OpCodes.Call, AccessTools.Method("System.String:Concat", new Type[] { typeof(String), typeof(String) })))
+                    // End of stupid fix
                     .InstructionEnumeration();
             }
         }
