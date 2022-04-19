@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace RDGameplayPatches
 {
-    [BepInPlugin("com.rhythmdr.gameplaypatches", "Rhythm Doctor Gameplay Patches", "1.3.3")]
+    [BepInPlugin("com.rhythmdr.gameplaypatches", "Rhythm Doctor Gameplay Patches", "1.3.4")]
     [BepInProcess("Rhythm Doctor.exe")]
     public class RDGameplayPatches : BaseUnityPlugin
     {
@@ -167,8 +167,8 @@ namespace RDGameplayPatches
                     .MatchForward(false,
                         new CodeMatch(OpCodes.Call, AccessTools.Method(typeof(RDInput), "SwapP1AndP2Controls")))
                     .SetOpcodeAndAdvance(OpCodes.Nop)
-                    .MatchForward(false,
                     // Start of stupid fix for Level_Intro issue (this took me FIVE DAYS to debug)
+                    .MatchForward(false,
                         new CodeMatch(OpCodes.Ldstr, "Level_"))
                     .Advance(3)
                     .InsertAndAdvance(
