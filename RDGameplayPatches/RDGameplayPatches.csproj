@@ -44,6 +44,12 @@
     <Reference Include="BepInEx.Harmony">
       <HintPath>Libs\BepInEx.Harmony.dll</HintPath>
     </Reference>
+    <Reference Include="DOTween">
+      <HintPath>Libs\DOTween.dll</HintPath>
+    </Reference>
+    <Reference Include="RDTools">
+      <HintPath>Libs\RDTools.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />

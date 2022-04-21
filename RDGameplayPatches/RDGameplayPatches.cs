@@ -8,14 +8,15 @@ using UnityEngine;
 
 namespace RDGameplayPatches
 {
-    [BepInPlugin("com.rhythmdr.gameplaypatches", "Rhythm Doctor Gameplay Patches", "1.3.4")]
+    [BepInPlugin("com.rhythmdr.gameplaypatches", "Rhythm Doctor Gameplay Patches", "1.4.0")]
     [BepInProcess("Rhythm Doctor.exe")]
     public class RDGameplayPatches : BaseUnityPlugin
     {
         private static ConfigEntry<VeryHardMode> configVeryHardMode;
         private ConfigEntry<bool> configAccurateReleaseMargins;
-        private ConfigEntry<bool> configPersistentP1AndP2Positions;
         private ConfigEntry<bool> configCountOffsetOnRelease;
+        private ConfigEntry<bool> configAntiCheeseHolds;
+        private ConfigEntry<bool> configPersistentP1AndP2Positions;
 
         private enum VeryHardMode
         {
@@ -35,6 +36,9 @@ namespace RDGameplayPatches
             configCountOffsetOnRelease = Config.Bind("Holds", "CountOffsetOnRelease", true,
                 "Shows the millisecond offset and counts the number of offset frames on hold releases.");
 
+            configAntiCheeseHolds = Config.Bind("Holds", "AntiCheeseHolds", true,
+                "Prevents you from cheesing levels by abusing a hold's auto-hits.");
+
             configPersistentP1AndP2Positions = Config.Bind("2P", "PersistentP1AndP2Positions", true,
                 "Reverts back to old game behavior and makes P1 and P2 positions persistent between level restarts.");
 
@@ -53,6 +57,9 @@ namespace RDGameplayPatches
 
             if (configAccurateReleaseMargins.Value)
                 Harmony.CreateAndPatchAll(typeof(AccurateReleaseMargins));
+
+            if (configAntiCheeseHolds.Value)
+                Harmony.CreateAndPatchAll(typeof(AntiCheeseHolds));
 
             if (configCountOffsetOnRelease.Value)
                 Harmony.CreateAndPatchAll(typeof(CountOffsetOnRelease));
@@ -153,6 +160,51 @@ namespace RDGameplayPatches
                     HUD.status = "[ " + offsetMs + " " + RDString.Get("editor.unit.ms") + " ]";
                 }
 
+                return true;
+            }
+        }
+
+        public static class AntiCheeseHolds
+        {
+            private static double holdReleaseTime;
+
+            [HarmonyPrefix]
+            [HarmonyPatch(typeof(Beat), "LateUpdate")]
+            public static bool Prefix(Beat __instance)
+            {
+                if (!RDC.auto)
+                {
+                    RDPlayer player = __instance.row.playerProp.GetCurrentPlayer();
+                    bool flag = false;
+                    foreach (Row row in __instance.game.rows)
+                    {
+                        if (row.playerBox != null && player == row.playerProp.GetCurrentPlayer() && row.playerBox.beatBeingHeld)
+                        {
+                            flag = true;
+                            break;
+                        }
+                    }
+                    if (player != RDPlayer.CPU && flag)
+                    {
+                        if (__instance.isHeldClap && holdReleaseTime != __instance.releaseTime)
+                            holdReleaseTime = __instance.releaseTime;
+
+                        RDInput.PlayerEmuState emuState = RDInput.emuStates[(int)player];
+
+                        if (!__instance.isHeldClap && __instance.conductor.audioPos >= __instance.inputTime && __instance.conductor.audioPos <= holdReleaseTime)
+                        {
+                            emuState.SetKey(RDInput.PlayerEmuKey.Down);
+                            Timer.Add(delegate { emuState.SetKey(RDInput.PlayerEmuKey.IsUp); }, 0.2f);
+                        }
+
+                        if (__instance.isHeldClap && __instance.conductor.audioPos >= __instance.releaseTime + 0.40000000596046448)
+                            emuState.SetKey(RDInput.PlayerEmuKey.Up);
+                    }
+
+                    if (__instance.dead)
+                        __instance.DestroyBeat(killSounds: false, evenIfHalfwayPlaying: false);
+                    return false;
+                }
                 return true;
             }
         }

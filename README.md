@@ -1,5 +1,5 @@
 # RDGameplayPatches
-Adds several patches to Rhythm Doctor gameplay.
+A BepInEx plugin that adds several patches to Rhythm Doctor gameplay.
 
 ## Features
 
@@ -12,10 +12,10 @@ Adds several patches to Rhythm Doctor gameplay.
 ### Holds
 - **Accurate Release Margins**: Changes the hold release margins to better reflect the player difficulty, including Very Hard difficulty.
 - **Count Offset On Release**: Shows the millisecond offset and counts the number of offset frames on hold releases.
+- **Anti-cheese Holds**: Prevents you from abusing hold auto-hit mechanics by automatically releasing late holds and not letting beats later than the release be auto-hit.
 
 ## TODO
 - [ ] Fix auto-hits missing/counting towards offset
-- [ ] Auto-release / stop autohitting on late holds
 - [ ] Change hold strip width based on difficulty
 - [ ] Fix unmissable difficulty making hold hit timings 200ms instead of 400ms
 - [ ] Auto-hit beats until hold ends even when the hold is released early
@@ -28,8 +28,8 @@ Adds several patches to Rhythm Doctor gameplay.
 3. Launch RD once to generate BepInEx files.
 4. Download the latest version of the mod from [here](https://github.com/RandomGuyJCI/RDGameplayPatches/releases). It should be named `RDGameplayPatches_1.x.x.zip`.
 5. Unzip the file you downloaded into your Rhythm Doctor installation folder. You should now have a file at `BepInEx/Plugins/RDGameplayPatches/RDGameplayPatches.dll`.
-6. Configure the plugin as needed in `BepInEx/config/com.rhythmdr.gameplaypatches.cfg`.
-7. Launch the game, and the plugin should automatically enable.
-8. **Optional:** To enable reloading the plugin on the fly, download and extract the [BepInEx ScriptEngine](https://github.com/BepInEx/BepInEx.Debug/releases/latest) plugin into your RD folder. Create a `scripts` folder in `BepInEx` then move `RDGameplayPatches.dll` to that folder. You should now be able to reload the plugin by pressing `F6` in-game (hotkey configurable in `BepInEx/config/com.bepis.bepinex.scriptengine`).
+6. Launch the game, and the plugin should automatically enable.
+7. Configure the plugin as needed in `BepInEx/config/com.rhythmdr.gameplaypatches.cfg`.
+8. **Optional:** To enable reloading the plugin on the fly, download and extract the [BepInEx ScriptEngine](https://github.com/BepInEx/BepInEx.Debug/releases/latest) plugin into your RD folder. Create a `scripts` folder in the `BepInEx` folder then move `RDGameplayPatches.dll` to that folder. You should now be able to reload the plugin by pressing `F6` in-game. You can also configure the hotkey in `BepInEx/config/com.bepis.bepinex.scriptengine`).
 
 For more information, check out the [BepInEx installation guide](https://docs.bepinex.dev/articles/user_guide/installation/index.html).
