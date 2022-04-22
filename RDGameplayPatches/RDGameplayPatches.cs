@@ -30,7 +30,7 @@ namespace RDGameplayPatches
             configVeryHardMode = Config.Bind("Difficulty", "VeryHardMode", VeryHardMode.None,
                 "Sets the player(s) in which Very Hard difficulty is enabled. Not affected by the difficulty setting in Rhythm Doctor when enabled.");
 
-            configAccurateReleaseMargins = Config.Bind("Holds", "AccurateRelaseMargins", false,
+            configAccurateReleaseMargins = Config.Bind("Holds", "AccurateReleaseMargins", false,
                 "Changes the hold release margins to better reflect the player difficulty, including Very Hard.");
 
             configCountOffsetOnRelease = Config.Bind("Holds", "CountOffsetOnRelease", true,
@@ -128,11 +128,11 @@ namespace RDGameplayPatches
         {
             [HarmonyPrefix]
             [HarmonyPatch(typeof(scrPlayerbox), "SpaceBarReleased")]
-            public static bool Prefix(RDPlayer player, bool cpuTriggered, scrPlayerbox __instance, double ___beatReleaseTime, scrRowEntities ___ent, bool ___beatBeingHeld)
+            public static bool Prefix(RDPlayer player, bool cpuTriggered, scrPlayerbox __instance, double ___beatReleaseTime)
             {
-                RDPlayer currentPlayer = ___ent.row.playerProp.GetCurrentPlayer();
+                RDPlayer currentPlayer = __instance.ent.row.playerProp.GetCurrentPlayer();
 
-                if ((player != currentPlayer) || (!___beatBeingHeld && !cpuTriggered))
+                if ((player != currentPlayer) || (!__instance.beatBeingHeld && !cpuTriggered))
                     return true;
 
                 double audioPos = __instance.conductor.audioPos;
@@ -175,16 +175,16 @@ namespace RDGameplayPatches
                 if (!RDC.auto)
                 {
                     RDPlayer player = __instance.row.playerProp.GetCurrentPlayer();
-                    bool flag = false;
+                    bool isPlayerHolding = false;
                     foreach (Row row in __instance.game.rows)
                     {
                         if (row.playerBox != null && player == row.playerProp.GetCurrentPlayer() && row.playerBox.beatBeingHeld)
                         {
-                            flag = true;
+                            isPlayerHolding = true;
                             break;
                         }
                     }
-                    if (player != RDPlayer.CPU && flag)
+                    if (player != RDPlayer.CPU && isPlayerHolding)
                     {
                         if (__instance.isHeldClap && holdReleaseTime != __instance.releaseTime)
                             holdReleaseTime = __instance.releaseTime;
@@ -225,7 +225,7 @@ namespace RDGameplayPatches
                     .Advance(3)
                     .InsertAndAdvance(
                         new CodeInstruction(OpCodes.Ldstr, ", Assembly-CSharp"),
-                        new CodeInstruction(OpCodes.Call, AccessTools.Method("System.String:Concat", new Type[] { typeof(String), typeof(String) })))
+                        new CodeInstruction(OpCodes.Call, AccessTools.Method("System.String:Concat", new [] { typeof(String), typeof(String) })))
                     // End of stupid fix
                     .InstructionEnumeration();
             }
