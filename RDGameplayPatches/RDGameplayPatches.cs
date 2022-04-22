@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection.Emit;
 using BepInEx;
 using BepInEx.Configuration;
@@ -17,7 +18,6 @@ namespace RDGameplayPatches
         private ConfigEntry<bool> configCountOffsetOnRelease;
         private ConfigEntry<bool> configAntiCheeseHolds;
         private ConfigEntry<bool> configPersistentP1AndP2Positions;
-
         private enum VeryHardMode
         {
             None,
@@ -25,6 +25,7 @@ namespace RDGameplayPatches
             P2,
             Both,
         }
+        
         void Awake()
         {
             configVeryHardMode = Config.Bind("Difficulty", "VeryHardMode", VeryHardMode.None,
@@ -77,8 +78,8 @@ namespace RDGameplayPatches
 
         public static class VeryHard
         {
-            private static bool isP1VeryHard = configVeryHardMode.Value == VeryHardMode.P1 || configVeryHardMode.Value == VeryHardMode.Both;
-            private static bool isP2VeryHard = configVeryHardMode.Value == VeryHardMode.P2 || configVeryHardMode.Value == VeryHardMode.Both;
+            private static readonly bool isP1VeryHard = configVeryHardMode.Value == VeryHardMode.P1 || configVeryHardMode.Value == VeryHardMode.Both;
+            private static readonly bool isP2VeryHard = configVeryHardMode.Value == VeryHardMode.P2 || configVeryHardMode.Value == VeryHardMode.Both;
 
             [HarmonyPostfix]
             [HarmonyPatch(typeof(scnGame), "GetHitMargin")]
@@ -98,11 +99,8 @@ namespace RDGameplayPatches
             [HarmonyPatch(typeof(scnGame), "Awake")]
             public static void Postfix()
             {
-                if (isP1VeryHard)
-                    scnGame.p1DefibMode = DefibMode.Hard;
-
-                if (isP2VeryHard)
-                    scnGame.p2DefibMode = DefibMode.Hard;
+                if (isP1VeryHard) scnGame.p1DefibMode = DefibMode.Hard;
+                if (isP2VeryHard) scnGame.p2DefibMode = DefibMode.Hard;
             }
         }
 
@@ -118,8 +116,8 @@ namespace RDGameplayPatches
             [HarmonyPatch(typeof(scrPlayerbox), "releaseOffsetType", MethodType.Getter)]
             public static void Postfix(scrRowEntities ___ent, ref OffsetType __result)
             {
-                RDPlayer currentPlayer = ___ent.row.playerProp.GetCurrentPlayer();
-                if ((currentPlayer == RDPlayer.P2 ? scnGame.p2DefibMode : scnGame.p1DefibMode) == DefibMode.Unmissable)
+                var player = ___ent.row.playerProp.GetCurrentPlayer();
+                if ((player == RDPlayer.P2 ? scnGame.p2DefibMode : scnGame.p1DefibMode) == DefibMode.Unmissable)
                     __result = OffsetType.Perfect;
             }
         }
@@ -130,17 +128,16 @@ namespace RDGameplayPatches
             [HarmonyPatch(typeof(scrPlayerbox), "SpaceBarReleased")]
             public static bool Prefix(RDPlayer player, bool cpuTriggered, scrPlayerbox __instance, double ___beatReleaseTime)
             {
-                RDPlayer currentPlayer = __instance.ent.row.playerProp.GetCurrentPlayer();
+                var currentPlayer = __instance.ent.row.playerProp.GetCurrentPlayer();
 
-                if ((player != currentPlayer) || (!__instance.beatBeingHeld && !cpuTriggered))
-                    return true;
+                if ((player != currentPlayer) || (!__instance.beatBeingHeld && !cpuTriggered)) return true;
 
-                double audioPos = __instance.conductor.audioPos;
-                float timeOffset = (float) (audioPos - ___beatReleaseTime);
+                var audioPos = __instance.conductor.audioPos;
+                var timeOffset = (float) (audioPos - ___beatReleaseTime);
                 
                 if (GC.showAbsoluteOffsets)
                 {
-                    int offsetFrames = Mathf.RoundToInt(timeOffset * 60);
+                    var offsetFrames = Mathf.RoundToInt(timeOffset * 60);
 
                     if (RDC.auto || Mathf.Abs(offsetFrames) <= 1)
                         offsetFrames = 0;
@@ -151,8 +148,8 @@ namespace RDGameplayPatches
 
                 if (GC.d_showMarginsNumerically)
                 {
-                    float timeOffsetInMilliseconds = timeOffset * 1000f;
-                    string offsetMs = timeOffsetInMilliseconds.ToString("N3");
+                    var timeOffsetInMilliseconds = timeOffset * 1000f;
+                    var offsetMs = timeOffsetInMilliseconds.ToString("N3");
 
                     if (timeOffsetInMilliseconds >= 0)
                         offsetMs = "+" + offsetMs;
@@ -172,40 +169,34 @@ namespace RDGameplayPatches
             [HarmonyPatch(typeof(Beat), "LateUpdate")]
             public static bool Prefix(Beat __instance)
             {
-                if (!RDC.auto)
+                if (RDC.auto) return true;
+                
+                var player = __instance.row.playerProp.GetCurrentPlayer();
+                var isPlayerHolding = __instance.game.rows.Any(row => 
+                    row.playerBox != null && 
+                    player == row.playerProp.GetCurrentPlayer() &&
+                    row.playerBox.beatBeingHeld);
+                    
+                if (player != RDPlayer.CPU && isPlayerHolding)
                 {
-                    RDPlayer player = __instance.row.playerProp.GetCurrentPlayer();
-                    bool isPlayerHolding = false;
-                    foreach (Row row in __instance.game.rows)
+                    if (__instance.isHeldClap && holdReleaseTime != __instance.releaseTime)
+                        holdReleaseTime = __instance.releaseTime;
+
+                    var emuState = RDInput.emuStates[(int)player];
+
+                    if (!__instance.isHeldClap && __instance.conductor.audioPos >= __instance.inputTime && __instance.conductor.audioPos <= holdReleaseTime)
                     {
-                        if (row.playerBox != null && player == row.playerProp.GetCurrentPlayer() && row.playerBox.beatBeingHeld)
-                        {
-                            isPlayerHolding = true;
-                            break;
-                        }
-                    }
-                    if (player != RDPlayer.CPU && isPlayerHolding)
-                    {
-                        if (__instance.isHeldClap && holdReleaseTime != __instance.releaseTime)
-                            holdReleaseTime = __instance.releaseTime;
-
-                        RDInput.PlayerEmuState emuState = RDInput.emuStates[(int)player];
-
-                        if (!__instance.isHeldClap && __instance.conductor.audioPos >= __instance.inputTime && __instance.conductor.audioPos <= holdReleaseTime)
-                        {
-                            emuState.SetKey(RDInput.PlayerEmuKey.Down);
-                            Timer.Add(delegate { emuState.SetKey(RDInput.PlayerEmuKey.IsUp); }, 0.2f);
-                        }
-
-                        if (__instance.isHeldClap && __instance.conductor.audioPos >= __instance.releaseTime + 0.40000000596046448)
-                            emuState.SetKey(RDInput.PlayerEmuKey.Up);
+                        emuState.SetKey(RDInput.PlayerEmuKey.Down);
+                        Timer.Add(delegate { emuState.SetKey(RDInput.PlayerEmuKey.IsUp); }, 0.2f);
                     }
 
-                    if (__instance.dead)
-                        __instance.DestroyBeat(killSounds: false, evenIfHalfwayPlaying: false);
-                    return false;
+                    if (__instance.isHeldClap && __instance.conductor.audioPos >= __instance.releaseTime + 0.40000000596046448)
+                        emuState.SetKey(RDInput.PlayerEmuKey.Up);
                 }
-                return true;
+
+                if (__instance.dead) __instance.DestroyBeat(killSounds: false, evenIfHalfwayPlaying: false);
+                
+                return false;
             }
         }
 
@@ -225,7 +216,7 @@ namespace RDGameplayPatches
                     .Advance(3)
                     .InsertAndAdvance(
                         new CodeInstruction(OpCodes.Ldstr, ", Assembly-CSharp"),
-                        new CodeInstruction(OpCodes.Call, AccessTools.Method("System.String:Concat", new [] { typeof(String), typeof(String) })))
+                        new CodeInstruction(OpCodes.Call, AccessTools.Method("System.String:Concat", new [] { typeof(string), typeof(string) })))
                     // End of stupid fix
                     .InstructionEnumeration();
             }
