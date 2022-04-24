@@ -1,7 +1,9 @@
+# Non-source code files
 RDGameplayPatches/libs
-
 RDGameplayPatches/bin
-
 RDGameplayPatches/obj
 
+# IDE-specific files and folders
 .vs/
+.idea/
+RDGameplayPatches.sln.DotSettings.user
