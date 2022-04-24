@@ -1,5 +1,5 @@
 # RDGameplayPatches
-A BepInEx plugin that adds several patches to Rhythm Doctor gameplay.
+_A [BepInEx](https://github.com/BepInEx/BepInEx) plugin that adds several patches to [Rhythm Doctor](https://rhythmdr.com/) gameplay._
 
 ## Features
 
