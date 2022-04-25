@@ -9,7 +9,7 @@ using UnityEngine;
 
 namespace RDGameplayPatches
 {
-    [BepInPlugin("com.rhythmdr.gameplaypatches", "Rhythm Doctor Gameplay Patches", "1.4.0")]
+    [BepInPlugin("com.rhythmdr.gameplaypatches", "Rhythm Doctor Gameplay Patches", "1.5.0")]
     [BepInProcess("Rhythm Doctor.exe")]
     public class RDGameplayPatches : BaseUnityPlugin
     {
@@ -18,6 +18,7 @@ namespace RDGameplayPatches
         private ConfigEntry<bool> configCountOffsetOnRelease;
         private ConfigEntry<bool> configAntiCheeseHolds;
         private ConfigEntry<bool> configPersistentP1AndP2Positions;
+        private ConfigEntry<bool> configRankColorOnSpeedChange;
         private enum VeryHardMode
         {
             None,
@@ -43,6 +44,9 @@ namespace RDGameplayPatches
             configPersistentP1AndP2Positions = Config.Bind("2P", "PersistentP1AndP2Positions", true,
                 "Reverts back to old game behavior and makes P1 and P2 positions persistent between level restarts.");
 
+            configRankColorOnSpeedChange = Config.Bind("Results", "RankColorOnSpeedChange", true,
+                "Changes the color of the rank text depending on the level's speed (blue on chill speed, red on chili speed).");
+
             switch (configVeryHardMode.Value)
             {
                 case VeryHardMode.P1:
@@ -67,6 +71,9 @@ namespace RDGameplayPatches
 
             if (configPersistentP1AndP2Positions.Value)
                 Harmony.CreateAndPatchAll(typeof(PersistentP1AndP2Positions));
+            
+            if(configRankColorOnSpeedChange.Value)
+                Harmony.CreateAndPatchAll(typeof(RankColorOnSpeedChange));
 
             Logger.LogInfo("Plugin enabled!");
         }
@@ -128,9 +135,7 @@ namespace RDGameplayPatches
             [HarmonyPatch(typeof(scrPlayerbox), "SpaceBarReleased")]
             public static bool Prefix(RDPlayer player, bool cpuTriggered, scrPlayerbox __instance, double ___beatReleaseTime)
             {
-                var currentPlayer = __instance.ent.row.playerProp.GetCurrentPlayer();
-
-                if ((player != currentPlayer) || (!__instance.beatBeingHeld && !cpuTriggered)) return true;
+                if ((player != __instance.player) || (!__instance.beatBeingHeld && !cpuTriggered)) return true;
 
                 var audioPos = __instance.conductor.audioPos;
                 var timeOffset = (float) (audioPos - ___beatReleaseTime);
@@ -142,8 +147,8 @@ namespace RDGameplayPatches
                     if (RDC.auto || Mathf.Abs(offsetFrames) <= 1)
                         offsetFrames = 0;
 
-                    if (currentPlayer != RDPlayer.CPU)
-                        __instance.game.mistakesManager.AddAbsoluteMistake(currentPlayer, offsetFrames);
+                    if (__instance.player != RDPlayer.CPU)
+                        __instance.game.mistakesManager.AddAbsoluteMistake(__instance.player, offsetFrames);
                 }
 
                 if (GC.d_showMarginsNumerically)
@@ -184,7 +189,7 @@ namespace RDGameplayPatches
 
                     var emuState = RDInput.emuStates[(int)player];
 
-                    if (!__instance.isHeldClap && __instance.conductor.audioPos >= __instance.inputTime && __instance.conductor.audioPos <= holdReleaseTime)
+                    if (!__instance.isHeldClap && __instance.conductor.audioPos >= __instance.inputTime && __instance.inputTime <= holdReleaseTime)
                     {
                         emuState.SetKey(RDInput.PlayerEmuKey.Down);
                         Timer.Add(delegate { emuState.SetKey(RDInput.PlayerEmuKey.IsUp); }, 0.2f);
@@ -219,6 +224,24 @@ namespace RDGameplayPatches
                         new CodeInstruction(OpCodes.Call, AccessTools.Method("System.String:Concat", new [] { typeof(string), typeof(string) })))
                     // End of stupid fix
                     .InstructionEnumeration();
+            }
+        }
+
+        public static class RankColorOnSpeedChange
+        {
+            [HarmonyPostfix]
+            [HarmonyPatch(typeof(HUD), "ShowAndSaveRank")]
+            public static void Postfix(HUD __instance)
+            {
+                var levelType = __instance.game.currentLevel.levelType;
+
+                if (levelType == LevelType.Boss || levelType == LevelType.Challenge) return;
+                
+                if (RDTime.speed > 1f)
+                    __instance.rank.color = new Color(0.93f, 0.44f, 0.44f);
+                    
+                if (RDTime.speed < 1f)
+                    __instance.rank.color = new Color(0.44f, 0.85f, 0.93f);
             }
         }
     }

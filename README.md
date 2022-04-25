@@ -14,6 +14,9 @@ _A [BepInEx](https://github.com/BepInEx/BepInEx) plugin that adds several patche
 - **Count Offset On Release**: Shows the millisecond offset and counts the number of offset frames on hold releases.
 - **Anti-cheese Holds**: Prevents you from abusing hold auto-hit mechanics by automatically releasing late holds and not letting beats later than the release be auto-hit.
 
+### Results
+- **Rank Color On Speed Change**: Implements Klyzx's suggestion and changes the rank color in the results depending on the level speed.
+
 ## TODO
 - [ ] Fix auto-hits missing/counting towards offset
 - [ ] Change hold strip width based on difficulty
