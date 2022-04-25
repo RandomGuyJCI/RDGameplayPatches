@@ -1,15 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection.Emit;
 using BepInEx;
 using BepInEx.Configuration;
 using HarmonyLib;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace RDGameplayPatches
 {
-    [BepInPlugin("com.rhythmdr.gameplaypatches", "Rhythm Doctor Gameplay Patches", "1.5.0")]
+    [BepInPlugin("com.rhythmdr.gameplaypatches", "Rhythm Doctor Gameplay Patches", "1.6.0")]
     [BepInProcess("Rhythm Doctor.exe")]
     public class RDGameplayPatches : BaseUnityPlugin
     {
@@ -19,6 +21,7 @@ namespace RDGameplayPatches
         private ConfigEntry<bool> configAntiCheeseHolds;
         private ConfigEntry<bool> configPersistentP1AndP2Positions;
         private ConfigEntry<bool> configRankColorOnSpeedChange;
+        private ConfigEntry<bool> configChangeRankButtonPerDifficulty;
         private enum VeryHardMode
         {
             None,
@@ -47,6 +50,9 @@ namespace RDGameplayPatches
             configRankColorOnSpeedChange = Config.Bind("Results", "RankColorOnSpeedChange", true,
                 "Changes the color of the rank text depending on the level's speed (blue on chill speed, red on chili speed).");
 
+            configChangeRankButtonPerDifficulty = Config.Bind("Results", "ChangeSmallHandPerDifficulty", true,
+                "Changes the player's button in the rank screen depending on the difficulty.");
+
             switch (configVeryHardMode.Value)
             {
                 case VeryHardMode.P1:
@@ -72,8 +78,11 @@ namespace RDGameplayPatches
             if (configPersistentP1AndP2Positions.Value)
                 Harmony.CreateAndPatchAll(typeof(PersistentP1AndP2Positions));
             
-            if(configRankColorOnSpeedChange.Value)
+            if (configRankColorOnSpeedChange.Value)
                 Harmony.CreateAndPatchAll(typeof(RankColorOnSpeedChange));
+            
+            if (configChangeRankButtonPerDifficulty.Value)
+                Harmony.CreateAndPatchAll(typeof(ChangeRankButtonPerDifficulty));
 
             Logger.LogInfo("Plugin enabled!");
         }
@@ -242,6 +251,55 @@ namespace RDGameplayPatches
                     
                 if (RDTime.speed < 1f)
                     __instance.rank.color = new Color(0.44f, 0.85f, 0.93f);
+            }
+        }
+
+        public static class ChangeRankButtonPerDifficulty
+        {
+            private const string assetsPath = "BepInEx/plugins/RDGameplayPatches/Assets/";
+
+            [HarmonyPostfix]
+            [HarmonyPatch(typeof(HUD), "Setup")]
+            public static void Postfix(ref Image ___smallHand)
+            {
+                var hardSmallHand1 = new Texture2D(47, 24);
+                hardSmallHand1.LoadImage(File.ReadAllBytes(assetsPath + "hard-small-hand-1.png"));
+                hardSmallHand1.filterMode = FilterMode.Point;
+                
+                var hardSmallHand2 = new Texture2D(47, 24);
+                hardSmallHand2.LoadImage(File.ReadAllBytes(assetsPath + "hard-small-hand-2.png"));
+                hardSmallHand2.filterMode = FilterMode.Point;
+                
+                var easySmallHand1 = new Texture2D(47, 24);
+                easySmallHand1.LoadImage(File.ReadAllBytes(assetsPath + "easy-small-hand-1.png"));
+                easySmallHand1.filterMode = FilterMode.Point;
+                
+                var easySmallHand2 = new Texture2D(47, 24);
+                easySmallHand2.LoadImage(File.ReadAllBytes(assetsPath + "easy-small-hand-2.png"));
+                easySmallHand2.filterMode = FilterMode.Point;
+                
+                var rect = new Rect(0.0f, 0.0f, 47, 24);
+                var vector = new Vector2(0.5f, 0.5f);
+
+                var hardSmallHandSprite = Sprite.Create(hardSmallHand1, rect, vector);
+                var easySmallHandSprite = Sprite.Create(easySmallHand1, rect, vector);
+                Sprite[] hardSmallHandSprites = { hardSmallHandSprite, Sprite.Create(hardSmallHand2, rect, vector) };
+                Sprite[] easySmallHandSprites = { easySmallHandSprite, Sprite.Create(easySmallHand2, rect, vector) };
+
+                var spriteAnimComponent = ___smallHand.GetComponent<SpriteAnimation>();
+                var imageComponent = ___smallHand.GetComponent<Image>();
+                
+                if (scnGame.p1DefibMode > DefibMode.Normal)
+                {
+                    imageComponent.sprite = hardSmallHandSprite;
+                    spriteAnimComponent.currentAnimationData.sprites = hardSmallHandSprites;
+                }
+
+                if (scnGame.p1DefibMode < DefibMode.Normal)
+                {
+                    imageComponent.sprite = easySmallHandSprite;
+                    spriteAnimComponent.currentAnimationData.sprites = easySmallHandSprites;
+                }
             }
         }
     }

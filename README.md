@@ -16,6 +16,7 @@ _A [BepInEx](https://github.com/BepInEx/BepInEx) plugin that adds several patche
 
 ### Results
 - **Rank Color On Speed Change**: Implements Klyzx's suggestion and changes the rank color in the results depending on the level speed.
+- **Change Rank Button Per Difficulty**: Implements lugi's suggestion and changes the small button on the bottom-right corner depending on the player's difficulty.
 
 ## TODO
 - [ ] Fix auto-hits missing/counting towards offset
