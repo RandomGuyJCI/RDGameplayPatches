@@ -11,10 +11,12 @@ using UnityEngine.UI;
 
 namespace RDGameplayPatches
 {
-    [BepInPlugin("com.rhythmdr.gameplaypatches", "Rhythm Doctor Gameplay Patches", "1.6.0")]
+    [BepInPlugin("com.rhythmdr.gameplaypatches", "Rhythm Doctor Gameplay Patches", "1.6.1")]
     [BepInProcess("Rhythm Doctor.exe")]
     public class RDGameplayPatches : BaseUnityPlugin
     {
+        private const string assetsPath = "BepInEx/plugins/RDGameplayPatches/Assets/";
+        
         private static ConfigEntry<VeryHardMode> configVeryHardMode;
         private ConfigEntry<bool> configAccurateReleaseMargins;
         private ConfigEntry<bool> configCountOffsetOnRelease;
@@ -50,7 +52,7 @@ namespace RDGameplayPatches
             configRankColorOnSpeedChange = Config.Bind("Results", "RankColorOnSpeedChange", true,
                 "Changes the color of the rank text depending on the level's speed (blue on chill speed, red on chili speed).");
 
-            configChangeRankButtonPerDifficulty = Config.Bind("Results", "ChangeSmallHandPerDifficulty", true,
+            configChangeRankButtonPerDifficulty = Config.Bind("Results", "ChangeRankButtonPerDifficulty", true,
                 "Changes the player's button in the rank screen depending on the difficulty.");
 
             switch (configVeryHardMode.Value)
@@ -256,12 +258,12 @@ namespace RDGameplayPatches
 
         public static class ChangeRankButtonPerDifficulty
         {
-            private const string assetsPath = "BepInEx/plugins/RDGameplayPatches/Assets/";
-
-            [HarmonyPostfix]
-            [HarmonyPatch(typeof(HUD), "Setup")]
-            public static void Postfix(ref Image ___smallHand)
+            [HarmonyPrefix]
+            [HarmonyPatch(typeof(HUD), "ShowSmallHand")]
+            public static bool Prefix(ref Image ___smallHand)
             {
+                if (___smallHand.gameObject.activeSelf) return true;
+                
                 var hardSmallHand1 = new Texture2D(47, 24);
                 hardSmallHand1.LoadImage(File.ReadAllBytes(assetsPath + "hard-small-hand-1.png"));
                 hardSmallHand1.filterMode = FilterMode.Point;
@@ -300,6 +302,8 @@ namespace RDGameplayPatches
                     imageComponent.sprite = easySmallHandSprite;
                     spriteAnimComponent.currentAnimationData.sprites = easySmallHandSprites;
                 }
+
+                return true;
             }
         }
     }
