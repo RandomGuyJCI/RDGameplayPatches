@@ -1,3 +1,7 @@
+![GitHub all releases](https://img.shields.io/github/downloads/RandomGuyJCI/RDGameplayPatches/total)
+[![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/ActualMandM/cemu_graphic_packs/issues)
+![Discord](https://img.shields.io/discord/296802696243970049)
+
 # RDGameplayPatches
 _A [BepInEx](https://github.com/BepInEx/BepInEx) plugin that adds several patches to [Rhythm Doctor](https://rhythmdr.com/) gameplay._
 
@@ -34,6 +38,7 @@ _A [BepInEx](https://github.com/BepInEx/BepInEx) plugin that adds several patche
 5. Unzip the file you downloaded into your Rhythm Doctor installation folder. You should now have a file at `BepInEx/Plugins/RDGameplayPatches/RDGameplayPatches.dll`.
 6. Launch the game, and the plugin should automatically enable.
 7. Configure the plugin as needed in `BepInEx/config/com.rhythmdr.gameplaypatches.cfg`.
-8. **Optional:** To enable reloading the plugin on the fly, download and extract the [BepInEx ScriptEngine](https://github.com/BepInEx/BepInEx.Debug/releases/latest) plugin into your RD folder. Create a `scripts` folder in the `BepInEx` folder then move `RDGameplayPatches.dll` to that folder. You should now be able to reload the plugin by pressing `F6` in-game. You can also configure the hotkey in `BepInEx/config/com.bepis.bepinex.scriptengine`).
+8. **Optional:** Install the [BepInEx Configuration Manager](https://github.com/BepInEx/BepInEx.ConfigurationManager) to configure the mod with a GUI by pressing `F1`.
+9. **Optional:** To enable reloading the plugin on the fly, install the [BepInEx ScriptEngine](https://github.com/BepInEx/BepInEx.Debug/releases/latest), create a `scripts` folder in the `BepInEx` folder then move `RDGameplayPatches.dll` to that folder. You should now be able to reload the plugin by pressing `F6` in-game.
 
 For more information, check out the [BepInEx installation guide](https://docs.bepinex.dev/articles/user_guide/installation/index.html).
