@@ -1,6 +1,6 @@
 [![GitHub all releases](https://img.shields.io/github/downloads/RandomGuyJCI/RDGameplayPatches/total)](https://github.com/RandomGuyJCI/RDGameplayPatches/releases/latest)
 [![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/RandomGuyJCI/RDGameplayPatches/issues)
-[![Discord](https://img.shields.io/discord/296802696243970049)](https://discord.gg/rhythmdr)
+[![Discord](https://img.shields.io/discord/296802696243970049?color=%235865F2&label=discord&logo=Discord&logoColor=%23ffffff)](https://discord.gg/rhythmdr)
 
 # RDGameplayPatches
 _A [BepInEx](https://github.com/BepInEx/BepInEx) plugin that adds several patches to [Rhythm Doctor](https://rhythmdr.com/) gameplay._
