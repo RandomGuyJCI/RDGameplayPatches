@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection.Emit;
 using BepInEx;
 using BepInEx.Configuration;
@@ -11,28 +10,31 @@ using UnityEngine.UI;
 
 namespace RDGameplayPatches
 {
-    [BepInPlugin("com.rhythmdr.gameplaypatches", "Rhythm Doctor Gameplay Patches", "1.6.1")]
+    [BepInPlugin("com.rhythmdr.gameplaypatches", "Rhythm Doctor Gameplay Patches", "1.7.0")]
     [BepInProcess("Rhythm Doctor.exe")]
     public class RDGameplayPatches : BaseUnityPlugin
     {
         private const string assetsPath = "BepInEx/plugins/RDGameplayPatches/Assets/";
-        
+
         private static ConfigEntry<VeryHardMode> configVeryHardMode;
         private ConfigEntry<bool> configAccurateReleaseMargins;
         private ConfigEntry<bool> configCountOffsetOnRelease;
-        private ConfigEntry<bool> configAntiCheeseHolds;
+        private static ConfigEntry<bool> configAntiCheeseHolds;
+        private static ConfigEntry<bool> configFixAutoHitMisses;
+        private static ConfigEntry<bool> configFixHoldPseudos;
         private ConfigEntry<bool> configPersistentP1AndP2Positions;
         private ConfigEntry<bool> configRankColorOnSpeedChange;
         private ConfigEntry<bool> configChangeRankButtonPerDifficulty;
+
         private enum VeryHardMode
         {
             None,
             P1,
             P2,
-            Both,
+            Both
         }
-        
-        void Awake()
+
+        private void Awake()
         {
             configVeryHardMode = Config.Bind("Difficulty", "VeryHardMode", VeryHardMode.None,
                 "Sets the player(s) in which Very Hard difficulty is enabled. Not affected by the difficulty setting in Rhythm Doctor when enabled.");
@@ -45,6 +47,12 @@ namespace RDGameplayPatches
 
             configAntiCheeseHolds = Config.Bind("Holds", "AntiCheeseHolds", true,
                 "Prevents you from cheesing levels by abusing a hold's auto-hits.");
+
+            configFixAutoHitMisses = Config.Bind("Holds", "FixAutoHitMisses", true,
+                "Fixes hold auto-hits from sometimes missing.");
+
+            configFixHoldPseudos = Config.Bind("Holds", "FixHoldPseudos", true,
+                "Always auto-hits beats that happen at the end of a hold, fixing the hold pseudo-hit issue. Recommended with FixAutoHitMisses enabled.");
 
             configPersistentP1AndP2Positions = Config.Bind("2P", "PersistentP1AndP2Positions", true,
                 "Reverts back to old game behavior and makes P1 and P2 positions persistent between level restarts.");
@@ -71,54 +79,90 @@ namespace RDGameplayPatches
             if (configAccurateReleaseMargins.Value)
                 Harmony.CreateAndPatchAll(typeof(AccurateReleaseMargins));
 
-            if (configAntiCheeseHolds.Value)
-                Harmony.CreateAndPatchAll(typeof(AntiCheeseHolds));
+            if (configAntiCheeseHolds.Value ||
+                configFixAutoHitMisses.Value ||
+                configFixHoldPseudos.Value)
+                Harmony.CreateAndPatchAll(typeof(HoldAutoHitPatch));
 
             if (configCountOffsetOnRelease.Value)
                 Harmony.CreateAndPatchAll(typeof(CountOffsetOnRelease));
 
             if (configPersistentP1AndP2Positions.Value)
                 Harmony.CreateAndPatchAll(typeof(PersistentP1AndP2Positions));
-            
+
             if (configRankColorOnSpeedChange.Value)
                 Harmony.CreateAndPatchAll(typeof(RankColorOnSpeedChange));
-            
+
             if (configChangeRankButtonPerDifficulty.Value)
                 Harmony.CreateAndPatchAll(typeof(ChangeRankButtonPerDifficulty));
 
             Logger.LogInfo("Plugin enabled!");
         }
 
-        void OnDestroy()
+        private void OnDestroy()
         {
             Harmony.UnpatchAll();
         }
-
+        
         public static class VeryHard
         {
-            private static readonly bool isP1VeryHard = configVeryHardMode.Value == VeryHardMode.P1 || configVeryHardMode.Value == VeryHardMode.Both;
-            private static readonly bool isP2VeryHard = configVeryHardMode.Value == VeryHardMode.P2 || configVeryHardMode.Value == VeryHardMode.Both;
+            private static readonly bool isP1VeryHard = configVeryHardMode.Value == VeryHardMode.P1 ||
+                                                        configVeryHardMode.Value == VeryHardMode.Both;
+
+            private static readonly bool isP2VeryHard = configVeryHardMode.Value == VeryHardMode.P2 ||
+                                                        configVeryHardMode.Value == VeryHardMode.Both;
 
             [HarmonyPostfix]
             [HarmonyPatch(typeof(scnGame), "GetHitMargin")]
             public static void Postfix(RDPlayer player, ref float __result)
             {
-                if ((player == RDPlayer.P1 && isP1VeryHard) || (player == RDPlayer.P2 && isP2VeryHard))
+                if (player == RDPlayer.P1 ? isP1VeryHard : isP2VeryHard)
                     __result = 0.025f;
             }
 
+            // Make the hit strip width thinner
             [HarmonyPatch(typeof(RDHitStrip), "Setup")]
             public static void Postfix(RDPlayer player, RDHitStrip __instance)
             {
-                if ((player == RDPlayer.P1 && isP1VeryHard) || (player == RDPlayer.P2 && isP2VeryHard))
+                if (player == RDPlayer.P1 ? isP1VeryHard : isP2VeryHard)
                     __instance.quad.size = new Vector2(8f, __instance.quad.size.y);
             }
 
+            // Force a hard button for each Very Hard player
             [HarmonyPatch(typeof(scnGame), "Awake")]
             public static void Postfix()
             {
                 if (isP1VeryHard) scnGame.p1DefibMode = DefibMode.Hard;
                 if (isP2VeryHard) scnGame.p2DefibMode = DefibMode.Hard;
+            }
+
+            // Prevent the difficulty setting from changing the Very Hard player's button or hit strip width 
+            [HarmonyTranspiler]
+            [HarmonyPatch(typeof(PauseModeContentArrows), "ChangeContentValue")]
+            public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator il)
+            {
+                Label breakLabel;
+                var codeMatcher = new CodeMatcher(instructions, il);
+
+                codeMatcher
+                    .MatchForward(false,
+                        new CodeMatch(OpCodes.Call, AccessTools.Method(typeof(PauseMenuMode), "CheckCJKText")))
+                    .CreateLabelAt(codeMatcher.Pos - 2, out breakLabel)
+                    .MatchBack(false,
+                        new CodeMatch(ci => ci.LoadsConstant(PauseContentName.DefibrillatorP1)))
+                    .Advance(3);
+
+                if (isP1VeryHard) 
+                    codeMatcher.InsertAndAdvance(
+                        new CodeInstruction(OpCodes.Ldloc_S, 6),
+                        new CodeInstruction(OpCodes.Brtrue_S, breakLabel));
+
+                if (isP2VeryHard)
+                    codeMatcher.InsertAndAdvance(
+                        new CodeInstruction(OpCodes.Ldloc_S, 6),
+                        new CodeInstruction(OpCodes.Brfalse_S, breakLabel));
+
+                return codeMatcher.InstructionEnumeration();
             }
         }
 
@@ -131,26 +175,29 @@ namespace RDGameplayPatches
                 __result = scnGame.GetHitMargin(player);
             }
 
+            // Never make unmissable releases miss
             [HarmonyPatch(typeof(scrPlayerbox), "releaseOffsetType", MethodType.Getter)]
             public static void Postfix(scrRowEntities ___ent, ref OffsetType __result)
             {
                 var player = ___ent.row.playerProp.GetCurrentPlayer();
-                if ((player == RDPlayer.P2 ? scnGame.p2DefibMode : scnGame.p1DefibMode) == DefibMode.Unmissable)
+                if ((player == RDPlayer.P1 ? scnGame.p1DefibMode : scnGame.p2DefibMode) == DefibMode.Unmissable)
                     __result = OffsetType.Perfect;
             }
         }
 
         public static class CountOffsetOnRelease
         {
+            // Copied over from scrPlayerBox.Pulse()
             [HarmonyPrefix]
             [HarmonyPatch(typeof(scrPlayerbox), "SpaceBarReleased")]
-            public static bool Prefix(RDPlayer player, bool cpuTriggered, scrPlayerbox __instance, double ___beatReleaseTime)
+            public static bool Prefix(RDPlayer player, bool cpuTriggered, scrPlayerbox __instance,
+                double ___beatReleaseTime)
             {
-                if ((player != __instance.player) || (!__instance.beatBeingHeld && !cpuTriggered)) return true;
+                if (player != __instance.player || (!__instance.beatBeingHeld && !cpuTriggered)) return true;
 
                 var audioPos = __instance.conductor.audioPos;
-                var timeOffset = (float) (audioPos - ___beatReleaseTime);
-                
+                var timeOffset = (float)(audioPos - ___beatReleaseTime);
+
                 if (GC.showAbsoluteOffsets)
                 {
                     var offsetFrames = Mathf.RoundToInt(timeOffset * 60);
@@ -177,42 +224,102 @@ namespace RDGameplayPatches
             }
         }
 
-        public static class AntiCheeseHolds
+        public static class HoldAutoHitPatch
         {
-            private static double holdReleaseTime;
+            private static double[] lastHoldReleaseTime;
+            private static double[] lastPerfectReleaseTime;
+
+            [HarmonyPostfix]
+            [HarmonyPatch(typeof(scrConductor), "Awake")]
+            public static void Postfix()
+            {
+                lastHoldReleaseTime = new double[] { 0, 0 };
+                lastPerfectReleaseTime = new double[] { 0, 0 };
+            }
 
             [HarmonyPrefix]
             [HarmonyPatch(typeof(Beat), "LateUpdate")]
             public static bool Prefix(Beat __instance)
             {
                 if (RDC.auto) return true;
-                
+
                 var player = __instance.row.playerProp.GetCurrentPlayer();
-                var isPlayerHolding = __instance.game.rows.Any(row => 
-                    row.playerBox != null && 
-                    player == row.playerProp.GetCurrentPlayer() &&
-                    row.playerBox.beatBeingHeld);
-                    
-                if (player != RDPlayer.CPU && isPlayerHolding)
+                var isPlayerHolding = false;
+                var audioPos = __instance.conductor.audioPos;
+                var releaseMargin = (double)scnGame.GetReleaseMargin(player);
+
+                foreach (var row in __instance.game.rows)
                 {
-                    if (__instance.isHeldClap && holdReleaseTime != __instance.releaseTime)
-                        holdReleaseTime = __instance.releaseTime;
+                    if (row.playerBox == null || player != row.playerProp.GetCurrentPlayer() ||
+                        !row.playerBox.beatBeingHeld) continue;
+
+                    isPlayerHolding = true;
+
+                    var beatReleaseTime = row.playerBox.beatReleaseTime;
+                    if (audioPos >= beatReleaseTime - releaseMargin &&
+                        audioPos <= beatReleaseTime + releaseMargin &&
+                        beatReleaseTime > lastPerfectReleaseTime[(int)player])
+                        lastPerfectReleaseTime[(int)player] = row.playerBox.beatReleaseTime;
+
+                    break;
+                }
+
+                if (player != RDPlayer.CPU && (isPlayerHolding || (configFixHoldPseudos.Value && __instance.inputTime <= lastPerfectReleaseTime[(int)player])))
+                {
+                    var isHeldClap = __instance.isHeldClap;
+
+                    if (isHeldClap && __instance.releaseTime > lastHoldReleaseTime[(int)player])
+                        lastHoldReleaseTime[(int)player] = __instance.releaseTime;
 
                     var emuState = RDInput.emuStates[(int)player];
 
-                    if (!__instance.isHeldClap && __instance.conductor.audioPos >= __instance.inputTime && __instance.inputTime <= holdReleaseTime)
+                    if (!isHeldClap && audioPos >= __instance.inputTime &&
+                        (!configAntiCheeseHolds.Value || __instance.inputTime <= lastHoldReleaseTime[(int)player]))
                     {
-                        emuState.SetKey(RDInput.PlayerEmuKey.Down);
-                        Timer.Add(delegate { emuState.SetKey(RDInput.PlayerEmuKey.IsUp); }, 0.2f);
+                        if (configFixAutoHitMisses.Value)
+                        {
+                            __instance.row.playerBox.Pulse((float)(audioPos - __instance.inputTime), __instance, true);
+                            RDBase.Vfx.FlashBorderFeedback(true);
+                            __instance.Create8thBeat();
+                        }
+                        else
+                        {
+                            emuState.SetKey(RDInput.PlayerEmuKey.Down);
+                            Timer.Add(delegate { emuState.SetKey(RDInput.PlayerEmuKey.IsUp); }, 0.2f);
+                        }
                     }
 
-                    if (__instance.isHeldClap && __instance.conductor.audioPos >= __instance.releaseTime + 0.40000000596046448)
+                    if (configAntiCheeseHolds.Value && isHeldClap &&
+                        audioPos >= __instance.releaseTime + 0.40000000596046448)
                         emuState.SetKey(RDInput.PlayerEmuKey.Up);
                 }
 
-                if (__instance.dead) __instance.DestroyBeat(killSounds: false, evenIfHalfwayPlaying: false);
-                
+                if (__instance.dead) __instance.DestroyBeat(false, false);
+
                 return false;
+            }
+
+            // Set all auto-hit frame offsets to 0
+            [HarmonyTranspiler]
+            [HarmonyPatch(typeof(scrPlayerbox), "Pulse")]
+            public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator il)
+            {
+                var codeMatcher = new CodeMatcher(instructions, il);
+
+                if (configFixAutoHitMisses.Value)
+                {
+                    Label label;
+                    codeMatcher
+                        .MatchForward(false,
+                            new CodeMatch(OpCodes.Ldsfld, AccessTools.Field(typeof(GC), "showAbsoluteOffsets")))
+                        .Advance(7)
+                        .CreateLabelAt(codeMatcher.Pos + 2, out label)
+                        .InsertAndAdvance(
+                            new CodeInstruction(OpCodes.Ldarg_3),
+                            new CodeInstruction(OpCodes.Brtrue, label));
+                }
+
+                return codeMatcher.InstructionEnumeration();
             }
         }
 
@@ -227,13 +334,31 @@ namespace RDGameplayPatches
                         new CodeMatch(OpCodes.Call, AccessTools.Method(typeof(RDInput), "SwapP1AndP2Controls")))
                     .SetOpcodeAndAdvance(OpCodes.Nop)
                     // Start of stupid fix for Level_Intro issue (this took me FIVE DAYS to debug)
-                    .MatchForward(false,
+                    .MatchForward(false, 
                         new CodeMatch(OpCodes.Ldstr, "Level_"))
                     .Advance(3)
                     .InsertAndAdvance(
                         new CodeInstruction(OpCodes.Ldstr, ", Assembly-CSharp"),
-                        new CodeInstruction(OpCodes.Call, AccessTools.Method("System.String:Concat", new [] { typeof(string), typeof(string) })))
+                        new CodeInstruction(OpCodes.Call, AccessTools.Method("System.String:Concat", new[] { typeof(string), typeof(string) })))
                     // End of stupid fix
+                    .InstructionEnumeration();
+            }
+            
+            // Always change the right arm if the level's in single-player mode
+            [HarmonyPatch(typeof(PauseModeContentArrows), "ChangeContentValue")]
+            public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator il)
+            {
+                Label label;
+                var codeMatcher = new CodeMatcher(instructions, il);
+                
+                return codeMatcher
+                    .MatchForward(false,
+                        new CodeMatch(OpCodes.Ldfld, AccessTools.Field(typeof(scrHandController), "rightArm")))
+                    .Advance(2)
+                    .CreateLabelAt(codeMatcher.Pos + 13, out label)
+                    .InsertAndAdvance(
+                        new CodeInstruction(OpCodes.Ldsfld, AccessTools.Field(typeof(GC), "twoPlayerMode")),
+                        new CodeInstruction(OpCodes.Brfalse, label))
                     .InstructionEnumeration();
             }
         }
@@ -247,10 +372,10 @@ namespace RDGameplayPatches
                 var levelType = __instance.game.currentLevel.levelType;
 
                 if (levelType == LevelType.Boss || levelType == LevelType.Challenge) return;
-                
+
                 if (RDTime.speed > 1f)
                     __instance.rank.color = new Color(0.93f, 0.44f, 0.44f);
-                    
+
                 if (RDTime.speed < 1f)
                     __instance.rank.color = new Color(0.44f, 0.85f, 0.93f);
             }
@@ -258,28 +383,29 @@ namespace RDGameplayPatches
 
         public static class ChangeRankButtonPerDifficulty
         {
+            // Hand images are editable in the Assets/ folder
             [HarmonyPrefix]
             [HarmonyPatch(typeof(HUD), "ShowSmallHand")]
             public static bool Prefix(ref Image ___smallHand)
             {
                 if (___smallHand.gameObject.activeSelf) return true;
-                
+
                 var hardSmallHand1 = new Texture2D(47, 24);
                 hardSmallHand1.LoadImage(File.ReadAllBytes(assetsPath + "hard-small-hand-1.png"));
                 hardSmallHand1.filterMode = FilterMode.Point;
-                
+
                 var hardSmallHand2 = new Texture2D(47, 24);
                 hardSmallHand2.LoadImage(File.ReadAllBytes(assetsPath + "hard-small-hand-2.png"));
                 hardSmallHand2.filterMode = FilterMode.Point;
-                
+
                 var easySmallHand1 = new Texture2D(47, 24);
                 easySmallHand1.LoadImage(File.ReadAllBytes(assetsPath + "easy-small-hand-1.png"));
                 easySmallHand1.filterMode = FilterMode.Point;
-                
+
                 var easySmallHand2 = new Texture2D(47, 24);
                 easySmallHand2.LoadImage(File.ReadAllBytes(assetsPath + "easy-small-hand-2.png"));
                 easySmallHand2.filterMode = FilterMode.Point;
-                
+
                 var rect = new Rect(0.0f, 0.0f, 47, 24);
                 var vector = new Vector2(0.5f, 0.5f);
 
@@ -288,19 +414,19 @@ namespace RDGameplayPatches
                 Sprite[] hardSmallHandSprites = { hardSmallHandSprite, Sprite.Create(hardSmallHand2, rect, vector) };
                 Sprite[] easySmallHandSprites = { easySmallHandSprite, Sprite.Create(easySmallHand2, rect, vector) };
 
-                var spriteAnimComponent = ___smallHand.GetComponent<SpriteAnimation>();
+                var spriteAnimationComponent = ___smallHand.GetComponent<SpriteAnimation>();
                 var imageComponent = ___smallHand.GetComponent<Image>();
-                
+
                 if (scnGame.p1DefibMode > DefibMode.Normal)
                 {
                     imageComponent.sprite = hardSmallHandSprite;
-                    spriteAnimComponent.currentAnimationData.sprites = hardSmallHandSprites;
+                    spriteAnimationComponent.currentAnimationData.sprites = hardSmallHandSprites;
                 }
 
                 if (scnGame.p1DefibMode < DefibMode.Normal)
                 {
                     imageComponent.sprite = easySmallHandSprite;
-                    spriteAnimComponent.currentAnimationData.sprites = easySmallHandSprites;
+                    spriteAnimationComponent.currentAnimationData.sprites = easySmallHandSprites;
                 }
 
                 return true;
