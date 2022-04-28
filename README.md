@@ -26,7 +26,6 @@ _A [BepInEx](https://github.com/BepInEx/BepInEx) plugin that adds several patche
 
 ## TODO
 - [ ] Change hold strip width based on difficulty
-- [ ] Fix unmissable difficulty making hold hit timings 200ms instead of 400ms
 - [ ] Make 2P keyboard locations independent from keyboard layout
 
 ## Installation
