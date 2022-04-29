@@ -10,7 +10,7 @@ using UnityEngine.UI;
 
 namespace RDGameplayPatches
 {
-    [BepInPlugin("com.rhythmdr.gameplaypatches", "Rhythm Doctor Gameplay Patches", "1.8.1")]
+    [BepInPlugin("com.rhythmdr.gameplaypatches", "Rhythm Doctor Gameplay Patches", "1.8.2")]
     [BepInProcess("Rhythm Doctor.exe")]
     public class RDGameplayPatches : BaseUnityPlugin
     {
@@ -22,7 +22,6 @@ namespace RDGameplayPatches
         private static ConfigEntry<bool> configAntiCheeseHolds;
         private static ConfigEntry<bool> configFixAutoHitMisses;
         private static ConfigEntry<bool> configFixHoldPseudos;
-        private ConfigEntry<bool> configPersistentP1AndP2Positions;
         private ConfigEntry<bool> configRankColorOnSpeedChange;
         private ConfigEntry<bool> configChangeRankButtonPerDifficulty;
 
@@ -54,9 +53,6 @@ namespace RDGameplayPatches
             configFixHoldPseudos = Config.Bind("Holds", "FixHoldPseudos", true,
                 "Always auto-hits beats that happen at the end of a hold, fixing the hold pseudo-hit issue. Recommended with FixAutoHitMisses enabled.");
 
-            configPersistentP1AndP2Positions = Config.Bind("2P", "PersistentP1AndP2Positions", true,
-                "Reverts back to old game behavior and makes P1 and P2 positions persistent between level restarts.");
-
             configRankColorOnSpeedChange = Config.Bind("Results", "RankColorOnSpeedChange", true,
                 "Changes the color of the rank text depending on the level's speed (blue on chill speed, red on chili speed).");
 
@@ -86,9 +82,6 @@ namespace RDGameplayPatches
 
             if (configCountOffsetOnRelease.Value)
                 Harmony.CreateAndPatchAll(typeof(CountOffsetOnRelease));
-
-            if (configPersistentP1AndP2Positions.Value)
-                Harmony.CreateAndPatchAll(typeof(PersistentP1AndP2Positions));
 
             if (configRankColorOnSpeedChange.Value)
                 Harmony.CreateAndPatchAll(typeof(RankColorOnSpeedChange));
@@ -320,46 +313,6 @@ namespace RDGameplayPatches
                 }
 
                 return codeMatcher.InstructionEnumeration();
-            }
-        }
-
-        public static class PersistentP1AndP2Positions
-        {
-            [HarmonyTranspiler]
-            [HarmonyPatch(typeof(scnGame), "Start")]
-            public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
-            {
-                return new CodeMatcher(instructions)
-                    .MatchForward(false,
-                        new CodeMatch(OpCodes.Call, AccessTools.Method(typeof(RDInput), "SwapP1AndP2Controls")))
-                    .SetOpcodeAndAdvance(OpCodes.Nop)
-                    // Start of stupid fix for Level_Intro issue (this took me FIVE DAYS to debug)
-                    .MatchForward(false, 
-                        new CodeMatch(OpCodes.Ldstr, "Level_"))
-                    .Advance(3)
-                    .InsertAndAdvance(
-                        new CodeInstruction(OpCodes.Ldstr, ", Assembly-CSharp"),
-                        new CodeInstruction(OpCodes.Call, AccessTools.Method("System.String:Concat", new[] { typeof(string), typeof(string) })))
-                    // End of stupid fix
-                    .InstructionEnumeration();
-            }
-            
-            // Always change the right arm if the level's in single-player mode
-            [HarmonyPatch(typeof(PauseModeContentArrows), "ChangeContentValue")]
-            public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator il)
-            {
-                Label label;
-                var codeMatcher = new CodeMatcher(instructions, il);
-                
-                return codeMatcher
-                    .MatchForward(false,
-                        new CodeMatch(OpCodes.Ldfld, AccessTools.Field(typeof(scrHandController), "rightArm")))
-                    .Advance(2)
-                    .CreateLabelAt(codeMatcher.Pos + 13, out label)
-                    .InsertAndAdvance(
-                        new CodeInstruction(OpCodes.Ldsfld, AccessTools.Field(typeof(GC), "twoPlayerMode")),
-                        new CodeInstruction(OpCodes.Brfalse, label))
-                    .InstructionEnumeration();
             }
         }
 

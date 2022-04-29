@@ -7,9 +7,6 @@ _A [BepInEx](https://github.com/BepInEx/BepInEx) plugin that adds several patche
 
 ## Features
 
-### 2P
-- **Persistent P1 And P2 Positions**: Reverts back to old game behavior and makes P1 and P2 positions persistent between level restarts.
-
 ### Difficulty
 - **Very Hard**: Adds a Very Hard difficulty to Rhythm Doctor, changing its hit margins to 25 ms. Configurable per player.
 
