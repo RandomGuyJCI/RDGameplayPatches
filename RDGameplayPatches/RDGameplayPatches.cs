@@ -10,7 +10,7 @@ using UnityEngine.UI;
 
 namespace RDGameplayPatches
 {
-    [BepInPlugin("com.rhythmdr.gameplaypatches", "Rhythm Doctor Gameplay Patches", "1.7.0")]
+    [BepInPlugin("com.rhythmdr.gameplaypatches", "Rhythm Doctor Gameplay Patches", "1.8.0")]
     [BepInProcess("Rhythm Doctor.exe")]
     public class RDGameplayPatches : BaseUnityPlugin
     {
@@ -25,6 +25,7 @@ namespace RDGameplayPatches
         private ConfigEntry<bool> configPersistentP1AndP2Positions;
         private ConfigEntry<bool> configRankColorOnSpeedChange;
         private ConfigEntry<bool> configChangeRankButtonPerDifficulty;
+        private ConfigEntry<bool> configFixCalibration;
 
         private enum VeryHardMode
         {
@@ -63,6 +64,9 @@ namespace RDGameplayPatches
             configChangeRankButtonPerDifficulty = Config.Bind("Results", "ChangeRankButtonPerDifficulty", true,
                 "Changes the player's button in the rank screen depending on the difficulty.");
 
+            configFixCalibration = Config.Bind("Calibration", "FixCalibration", true,
+                "Fixes the calibration screen inconsistency and sets your input offsets to the average of your calibration hits.");
+
             switch (configVeryHardMode.Value)
             {
                 case VeryHardMode.P1:
@@ -95,6 +99,9 @@ namespace RDGameplayPatches
 
             if (configChangeRankButtonPerDifficulty.Value)
                 Harmony.CreateAndPatchAll(typeof(ChangeRankButtonPerDifficulty));
+
+            if (configFixCalibration.Value)
+                Harmony.CreateAndPatchAll(typeof(FixCalibration));
 
             Logger.LogInfo("Plugin enabled!");
         }
@@ -430,6 +437,23 @@ namespace RDGameplayPatches
                 }
 
                 return true;
+            }
+        }
+
+        public static class FixCalibration
+        {
+            [HarmonyTranspiler]
+            [HarmonyPatch(typeof(scnCalibration), "LateUpdate")]
+            public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+            {
+                return new CodeMatcher(instructions)
+                    .MatchForward(false,
+                        new CodeMatch(OpCodes.Stsfld, AccessTools.Field(typeof(RDCalibration), "calibration_i")))
+                    .Advance(-1)
+                    .SetOperandAndAdvance(AccessTools.Field(typeof(scnCalibration), "average"))
+                    .Advance(2)
+                    .SetOperandAndAdvance(AccessTools.Field(typeof(scnCalibration), "average"))
+                    .InstructionEnumeration();
             }
         }
     }
