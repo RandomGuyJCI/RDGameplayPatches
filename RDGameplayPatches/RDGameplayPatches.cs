@@ -245,6 +245,10 @@ namespace RDGameplayPatches
                     isPlayerHolding = true;
 
                     var beatReleaseTime = row.playerBox.beatReleaseTime;
+                    
+                    if (beatReleaseTime > lastHoldReleaseTime[(int)player])
+                        lastHoldReleaseTime[(int)player] = beatReleaseTime;
+                    
                     if (row.playerBox.releaseOffsetType == OffsetType.Perfect && beatReleaseTime > lastPerfectReleaseTime[(int)player])
                         lastPerfectReleaseTime[(int)player] = beatReleaseTime;
 
@@ -254,10 +258,6 @@ namespace RDGameplayPatches
                 if (player != RDPlayer.CPU && (isPlayerHolding || (configFixHoldPseudos.Value && __instance.inputTime <= lastPerfectReleaseTime[(int)player])))
                 {
                     var isHeldClap = __instance.isHeldClap;
-
-                    if (isHeldClap && __instance.releaseTime != lastHoldReleaseTime[(int)player])
-                        lastHoldReleaseTime[(int)player] = __instance.releaseTime;
-
                     var emuState = RDInput.emuStates[(int)player];
 
                     if (!isHeldClap && audioPos >= __instance.inputTime &&
