@@ -10,7 +10,7 @@ using UnityEngine.UI;
 
 namespace RDGameplayPatches
 {
-    [BepInPlugin("com.rhythmdr.gameplaypatches", "Rhythm Doctor Gameplay Patches", "1.8.2")]
+    [BepInPlugin("com.rhythmdr.gameplaypatches", "Rhythm Doctor Gameplay Patches", "1.8.3")]
     [BepInProcess("Rhythm Doctor.exe")]
     public class RDGameplayPatches : BaseUnityPlugin
     {
@@ -219,16 +219,8 @@ namespace RDGameplayPatches
 
         public static class HoldAutoHitPatch
         {
-            private static double[] lastHoldReleaseTime;
-            private static double[] lastPerfectReleaseTime;
-
-            [HarmonyPostfix]
-            [HarmonyPatch(typeof(scrConductor), "Awake")]
-            public static void Postfix()
-            {
-                lastHoldReleaseTime = new double[] { 0, 0 };
-                lastPerfectReleaseTime = new double[] { 0, 0 };
-            }
+            private static readonly double[] lastHoldReleaseTime = { 0, 0 };
+            private static readonly double[] lastPerfectReleaseTime = { 0, 0 };
 
             [HarmonyPrefix]
             [HarmonyPatch(typeof(Beat), "LateUpdate")]
@@ -243,16 +235,15 @@ namespace RDGameplayPatches
 
                 foreach (var row in __instance.game.rows)
                 {
-                    if (row.playerBox == null || player != row.playerProp.GetCurrentPlayer() ||
-                        !row.playerBox.beatBeingHeld) continue;
-
+                    if (row.playerBox == null || player != row.playerProp.GetCurrentPlayer() || !row.playerBox.beatBeingHeld) continue;
+                    
                     isPlayerHolding = true;
 
                     var beatReleaseTime = row.playerBox.beatReleaseTime;
                     if (audioPos >= beatReleaseTime - releaseMargin &&
                         audioPos <= beatReleaseTime + releaseMargin &&
                         beatReleaseTime > lastPerfectReleaseTime[(int)player])
-                        lastPerfectReleaseTime[(int)player] = row.playerBox.beatReleaseTime;
+                        lastPerfectReleaseTime[(int)player] = beatReleaseTime;
 
                     break;
                 }
@@ -261,13 +252,13 @@ namespace RDGameplayPatches
                 {
                     var isHeldClap = __instance.isHeldClap;
 
-                    if (isHeldClap && __instance.releaseTime > lastHoldReleaseTime[(int)player])
+                    if (isHeldClap && __instance.releaseTime != lastHoldReleaseTime[(int)player])
                         lastHoldReleaseTime[(int)player] = __instance.releaseTime;
 
                     var emuState = RDInput.emuStates[(int)player];
 
                     if (!isHeldClap && audioPos >= __instance.inputTime &&
-                        (!configAntiCheeseHolds.Value || __instance.inputTime <= lastHoldReleaseTime[(int)player]))
+                        !(configAntiCheeseHolds.Value && __instance.inputTime > lastHoldReleaseTime[(int)player]))
                     {
                         if (configFixAutoHitMisses.Value)
                         {
@@ -282,8 +273,7 @@ namespace RDGameplayPatches
                         }
                     }
 
-                    if (configAntiCheeseHolds.Value && isHeldClap &&
-                        audioPos >= __instance.releaseTime + 0.40000000596046448)
+                    if (configAntiCheeseHolds.Value && isHeldClap && audioPos >= __instance.releaseTime + 0.40000000596046448)
                         emuState.SetKey(RDInput.PlayerEmuKey.Up);
                 }
 
