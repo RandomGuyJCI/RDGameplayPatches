@@ -10,20 +10,21 @@ using UnityEngine.UI;
 
 namespace RDGameplayPatches
 {
-    [BepInPlugin("com.rhythmdr.gameplaypatches", "Rhythm Doctor Gameplay Patches", "1.8.3")]
+    [BepInPlugin("com.rhythmdr.gameplaypatches", "Rhythm Doctor Gameplay Patches", "1.9.0")]
     [BepInProcess("Rhythm Doctor.exe")]
     public class RDGameplayPatches : BaseUnityPlugin
     {
         private const string assetsPath = "BepInEx/plugins/RDGameplayPatches/Assets/";
 
         private static ConfigEntry<VeryHardMode> configVeryHardMode;
-        private ConfigEntry<bool> configAccurateReleaseMargins;
-        private ConfigEntry<bool> configCountOffsetOnRelease;
+        private static ConfigEntry<bool> configAccurateReleaseMargins;
+        private static ConfigEntry<bool> configCountOffsetOnRelease;
         private static ConfigEntry<bool> configAntiCheeseHolds;
         private static ConfigEntry<bool> configFixAutoHitMisses;
         private static ConfigEntry<bool> configFixHoldPseudos;
-        private ConfigEntry<bool> configRankColorOnSpeedChange;
-        private ConfigEntry<bool> configChangeRankButtonPerDifficulty;
+        private static ConfigEntry<bool> configRankColorOnSpeedChange;
+        private static ConfigEntry<bool> configChangeRankButtonPerDifficulty;
+        private static ConfigEntry<bool> configPlayerOnlyMsOffset;
 
         private enum VeryHardMode
         {
@@ -53,11 +54,14 @@ namespace RDGameplayPatches
             configFixHoldPseudos = Config.Bind("Holds", "FixHoldPseudos", true,
                 "Always auto-hits beats that happen at the end of a hold, fixing the hold pseudo-hit issue. Recommended with FixAutoHitMisses enabled.");
 
-            configRankColorOnSpeedChange = Config.Bind("Results", "RankColorOnSpeedChange", true,
+            configRankColorOnSpeedChange = Config.Bind("HUD", "RankColorOnSpeedChange", true,
                 "Changes the color of the rank text depending on the level's speed (blue on chill speed, red on chili speed).");
 
-            configChangeRankButtonPerDifficulty = Config.Bind("Results", "ChangeRankButtonPerDifficulty", true,
+            configChangeRankButtonPerDifficulty = Config.Bind("HUD", "ChangeRankButtonPerDifficulty", true,
                 "Changes the player's button in the rank screen depending on the difficulty.");
+
+            configPlayerOnlyMsOffset = Config.Bind("HUD", "PlayerOnlyMsOffset", false,
+                "Changes the status sign behavior to only show player hit offsets when Numerical Hit Judgement is enabled.");
 
             switch (configVeryHardMode.Value)
             {
@@ -88,6 +92,9 @@ namespace RDGameplayPatches
 
             if (configChangeRankButtonPerDifficulty.Value)
                 Harmony.CreateAndPatchAll(typeof(ChangeRankButtonPerDifficulty));
+
+            if (configPlayerOnlyMsOffset.Value) 
+                Harmony.CreateAndPatchAll(typeof(PlayerOnlyMsOffset));
 
             Logger.LogInfo("Plugin enabled!");
         }
@@ -183,8 +190,7 @@ namespace RDGameplayPatches
             // Copied over from scrPlayerBox.Pulse()
             [HarmonyPrefix]
             [HarmonyPatch(typeof(scrPlayerbox), "SpaceBarReleased")]
-            public static bool Prefix(RDPlayer player, bool cpuTriggered, scrPlayerbox __instance,
-                double ___beatReleaseTime)
+            public static bool Prefix(RDPlayer player, bool cpuTriggered, scrPlayerbox __instance, double ___beatReleaseTime)
             {
                 if (player != __instance.player || (!__instance.beatBeingHeld && !cpuTriggered)) return true;
 
@@ -202,7 +208,7 @@ namespace RDGameplayPatches
                         __instance.game.mistakesManager.AddAbsoluteMistake(__instance.player, offsetFrames);
                 }
 
-                if (GC.d_showMarginsNumerically)
+                if (!(configPlayerOnlyMsOffset.Value && cpuTriggered) && GC.d_showMarginsNumerically)
                 {
                     var timeOffsetInMilliseconds = timeOffset * 1000f;
                     var offsetMs = timeOffsetInMilliseconds.ToString("N3");
@@ -231,18 +237,15 @@ namespace RDGameplayPatches
                 var player = __instance.row.playerProp.GetCurrentPlayer();
                 var isPlayerHolding = false;
                 var audioPos = __instance.conductor.audioPos;
-                var releaseMargin = (double)scnGame.GetReleaseMargin(player);
 
                 foreach (var row in __instance.game.rows)
                 {
                     if (row.playerBox == null || player != row.playerProp.GetCurrentPlayer() || !row.playerBox.beatBeingHeld) continue;
-                    
+
                     isPlayerHolding = true;
 
                     var beatReleaseTime = row.playerBox.beatReleaseTime;
-                    if (audioPos >= beatReleaseTime - releaseMargin &&
-                        audioPos <= beatReleaseTime + releaseMargin &&
-                        beatReleaseTime > lastPerfectReleaseTime[(int)player])
+                    if (row.playerBox.releaseOffsetType == OffsetType.Perfect && beatReleaseTime > lastPerfectReleaseTime[(int)player])
                         lastPerfectReleaseTime[(int)player] = beatReleaseTime;
 
                     break;
@@ -313,14 +316,10 @@ namespace RDGameplayPatches
             public static void Postfix(HUD __instance)
             {
                 var levelType = __instance.game.currentLevel.levelType;
-
                 if (levelType == LevelType.Boss || levelType == LevelType.Challenge) return;
 
-                if (RDTime.speed > 1f)
-                    __instance.rank.color = new Color(0.93f, 0.44f, 0.44f);
-
-                if (RDTime.speed < 1f)
-                    __instance.rank.color = new Color(0.44f, 0.85f, 0.93f);
+                if (RDTime.speed > 1f) __instance.rank.color = new Color(0.93f, 0.44f, 0.44f);
+                if (RDTime.speed < 1f) __instance.rank.color = new Color(0.44f, 0.85f, 0.93f);
             }
         }
 
@@ -373,6 +372,27 @@ namespace RDGameplayPatches
                 }
 
                 return true;
+            }
+        }
+
+        public static class PlayerOnlyMsOffset
+        {
+            [HarmonyTranspiler]
+            [HarmonyPatch(typeof(scrPlayerbox), "Pulse")]
+            public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator il)
+            {
+                Label label;
+                var codeMatcher = new CodeMatcher(instructions, il);
+                
+                return codeMatcher
+                    .End()
+                    .CreateLabelAt(codeMatcher.Pos -1, out label)
+                    .MatchBack(false,
+                        new CodeMatch(OpCodes.Ldsfld, AccessTools.Field(typeof(GC), "d_showMarginsNumerically")))
+                    .InsertAndAdvance(
+                        new CodeInstruction(OpCodes.Ldarg_3),
+                        new CodeInstruction(OpCodes.Brtrue, label))
+                    .InstructionEnumeration();
             }
         }
     }
