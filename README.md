@@ -2,7 +2,7 @@
 [![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/RandomGuyJCI/RDGameplayPatches/issues)
 [![Discord](https://img.shields.io/discord/296802696243970049?color=%235865F2&label=discord&logo=Discord&logoColor=%23ffffff)](https://discord.gg/rhythmdr)
 
-<div style="text-align: center;">
+<div align="center">
   <img src="https://cdn.discordapp.com/attachments/298297906509774848/970402063097954376/bgpatch.png" width=128px>
   <h1>RDGameplayPatches</h1>
   <i>A <a href="https://github.com/BepInEx/BepInEx">BepInEx</a> plugin that adds several patches to <a href="https://rhythmdr.com">Rhythm Doctor</a> gameplay.</i>
