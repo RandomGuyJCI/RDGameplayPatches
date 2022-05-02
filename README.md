@@ -2,7 +2,7 @@
 [![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/RandomGuyJCI/RDGameplayPatches/issues)
 [![Discord](https://img.shields.io/discord/296802696243970049?color=%235865F2&label=discord&logo=Discord&logoColor=%23ffffff)](https://discord.gg/rhythmdr)
 
-<div align="center">
+<div style="text-align: center;">
   <img src="https://cdn.discordapp.com/attachments/298297906509774848/970402063097954376/bgpatch.png" width=128px>
   <h1>RDGameplayPatches</h1>
   <i>A <a href="https://github.com/BepInEx/BepInEx">BepInEx</a> plugin that adds several patches to <a href="https://rhythmdr.com">Rhythm Doctor</a> gameplay.</i>
@@ -22,9 +22,10 @@
 - **Fix Auto-Hit Misses**: Fixes a long-standing issue where hold auto-hits completely miss some beats.
 - **Fix Hold Pseudos**: Always auto-hits beats that land at the same time as a hold's release, even when released slightly early. *Recommended with Fix Auto-Hit Misses enabled.*
 
-### Results
+### HUD
 - **Rank Color On Speed Change**: Implements Klyzx's suggestion and changes the rank color in the results depending on the level speed.
 - **Change Rank Button Per Difficulty**: Implements lugi's suggestion and changes the small button on the bottom-right corner depending on the player's difficulty.
+- **Player-only Millisecond Offset**: Only shows player hits in the millisecond offset status sign and doesn't show CPU hits.
 
 ## TODO
 - [ ] Change hold strip width based on difficulty
