@@ -10,7 +10,7 @@ using UnityEngine.UI;
 
 namespace RDGameplayPatches
 {
-    [BepInPlugin("com.rhythmdr.gameplaypatches", "Rhythm Doctor Gameplay Patches", "1.9.0")]
+    [BepInPlugin("com.rhythmdr.gameplaypatches", "Rhythm Doctor Gameplay Patches", "1.10.0")]
     [BepInProcess("Rhythm Doctor.exe")]
     public class RDGameplayPatches : BaseUnityPlugin
     {
@@ -25,6 +25,7 @@ namespace RDGameplayPatches
         private static ConfigEntry<bool> configRankColorOnSpeedChange;
         private static ConfigEntry<bool> configChangeRankButtonPerDifficulty;
         private static ConfigEntry<bool> configPlayerOnlyMsOffset;
+        private static ConfigEntry<bool> configFixSimultaneousHitMisses;
 
         private enum VeryHardMode
         {
@@ -63,6 +64,9 @@ namespace RDGameplayPatches
             configPlayerOnlyMsOffset = Config.Bind("HUD", "PlayerOnlyMsOffset", false,
                 "Changes the status sign behavior to only show player hit offsets when Numerical Hit Judgement is enabled.");
 
+            configFixSimultaneousHitMisses = Config.Bind("Hits", "FixSimultaneousHitMisses", true,
+                "Makes the offset of simultaneous hits consistent and fixes a long-standing bug where you miss on some rows.");
+
             switch (configVeryHardMode.Value)
             {
                 case VeryHardMode.P1:
@@ -95,6 +99,9 @@ namespace RDGameplayPatches
 
             if (configPlayerOnlyMsOffset.Value) 
                 Harmony.CreateAndPatchAll(typeof(PlayerOnlyMsOffset));
+
+            if (configFixSimultaneousHitMisses.Value)
+                Harmony.CreateAndPatchAll(typeof(FixSimultaneousHitMisses));
 
             Logger.LogInfo("Plugin enabled!");
         }
@@ -392,6 +399,32 @@ namespace RDGameplayPatches
                     .InsertAndAdvance(
                         new CodeInstruction(OpCodes.Ldarg_3),
                         new CodeInstruction(OpCodes.Brtrue, label))
+                    .InstructionEnumeration();
+            }
+        }
+
+        public static class FixSimultaneousHitMisses
+        {
+            private static double audioPos;
+
+            [HarmonyPrefix]
+            [HarmonyPatch(typeof(scnGame), "UpdateGameplayInput")]
+            public static bool Prefix(scnGame __instance)
+            {
+                audioPos = __instance.conductor.audioPos;
+                return true;
+            }
+
+            [HarmonyTranspiler]
+            [HarmonyPatch(typeof(scrPlayerbox), "SpaceBarEvent")]
+            public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+            {
+                return new CodeMatcher(instructions)
+                    .MatchForward(false, new CodeMatch(OpCodes.Stloc_0))
+                    .Advance(-3)
+                    .SetOpcodeAndAdvance(OpCodes.Nop)
+                    .SetOpcodeAndAdvance(OpCodes.Nop)
+                    .SetAndAdvance(OpCodes.Ldsfld, AccessTools.Field(typeof(FixSimultaneousHitMisses), nameof(audioPos)))
                     .InstructionEnumeration();
             }
         }

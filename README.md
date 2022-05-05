@@ -15,6 +15,9 @@
 ### Difficulty
 - **Very Hard**: Adds a Very Hard difficulty to Rhythm Doctor, changing its hit margins to 25 ms. Configurable per player.
 
+### Hits
+- **Fix Simultaneous Hit Misses**: Makes the offset of simultaneous hits consistent and fixes a long-standing bug where you miss on some rows.
+
 ### Holds
 - **Accurate Release Margins**: Changes the hold release margins to better reflect the player difficulty, including Very Hard difficulty.
 - **Count Offset On Release**: Shows the millisecond offset and counts the number of offset frames on hold releases.
@@ -24,7 +27,7 @@
 
 ### HUD
 - **Rank Color On Speed Change**: Implements Klyzx's suggestion and changes the rank color in the results depending on the level speed.
-- **Change Rank Button Per Difficulty**: Implements lugi's suggestion and changes the small button on the bottom-right corner depending on the player's difficulty.
+- **Change Rank Button Per Difficulty**: Implements lugi's suggestion and changes the button on the bottom-right corner of the rank screen depending on the player's difficulty.
 - **Player-only Millisecond Offset**: Only shows player hits in the millisecond offset status sign and doesn't show CPU hits.
 
 ## TODO
