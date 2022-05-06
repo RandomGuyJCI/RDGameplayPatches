@@ -10,13 +10,14 @@ using UnityEngine.UI;
 
 namespace RDGameplayPatches
 {
-    [BepInPlugin("com.rhythmdr.gameplaypatches", "Rhythm Doctor Gameplay Patches", "1.10.0")]
+    [BepInPlugin("com.rhythmdr.gameplaypatches", "Rhythm Doctor Gameplay Patches", "1.10.1")]
     [BepInProcess("Rhythm Doctor.exe")]
     public class RDGameplayPatches : BaseUnityPlugin
     {
         private const string assetsPath = "BepInEx/plugins/RDGameplayPatches/Assets/";
 
         private static ConfigEntry<VeryHardMode> configVeryHardMode;
+        private static ConfigEntry<bool> configFixSimultaneousHitMisses;
         private static ConfigEntry<bool> configAccurateReleaseMargins;
         private static ConfigEntry<bool> configCountOffsetOnRelease;
         private static ConfigEntry<bool> configAntiCheeseHolds;
@@ -25,7 +26,6 @@ namespace RDGameplayPatches
         private static ConfigEntry<bool> configRankColorOnSpeedChange;
         private static ConfigEntry<bool> configChangeRankButtonPerDifficulty;
         private static ConfigEntry<bool> configPlayerOnlyMsOffset;
-        private static ConfigEntry<bool> configFixSimultaneousHitMisses;
 
         private enum VeryHardMode
         {
@@ -37,8 +37,11 @@ namespace RDGameplayPatches
 
         private void Awake()
         {
-            configVeryHardMode = Config.Bind("Difficulty", "VeryHardMode", VeryHardMode.None,
+            configVeryHardMode = Config.Bind("Hits", "VeryHardMode", VeryHardMode.None,
                 "Sets the player(s) in which Very Hard difficulty is enabled. Not affected by the difficulty setting in Rhythm Doctor when enabled.");
+
+            configFixSimultaneousHitMisses = Config.Bind("Hits", "FixSimultaneousHitMisses", true,
+                "Makes the offset of simultaneous hits consistent and fixes a long-standing bug where you miss on some rows.");
 
             configAccurateReleaseMargins = Config.Bind("Holds", "AccurateReleaseMargins", false,
                 "Changes the hold release margins to better reflect the player difficulty, including Very Hard.");
@@ -63,9 +66,6 @@ namespace RDGameplayPatches
 
             configPlayerOnlyMsOffset = Config.Bind("HUD", "PlayerOnlyMsOffset", false,
                 "Changes the status sign behavior to only show player hit offsets when Numerical Hit Judgement is enabled.");
-
-            configFixSimultaneousHitMisses = Config.Bind("Hits", "FixSimultaneousHitMisses", true,
-                "Makes the offset of simultaneous hits consistent and fixes a long-standing bug where you miss on some rows.");
 
             switch (configVeryHardMode.Value)
             {

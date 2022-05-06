@@ -12,10 +12,8 @@
 
 ## Features
 
-### Difficulty
-- **Very Hard**: Adds a Very Hard difficulty to Rhythm Doctor, changing its hit margins to 25 ms. Configurable per player.
-
 ### Hits
+- **Very Hard**: Adds a Very Hard difficulty to Rhythm Doctor, changing its hit margins to 25 ms. Configurable per player.
 - **Fix Simultaneous Hit Misses**: Makes the offset of simultaneous hits consistent and fixes a long-standing bug where you miss on some rows.
 
 ### Holds
