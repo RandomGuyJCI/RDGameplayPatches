@@ -10,7 +10,7 @@ using UnityEngine.UI;
 
 namespace RDGameplayPatches
 {
-    [BepInPlugin("com.rhythmdr.gameplaypatches", "Rhythm Doctor Gameplay Patches", "1.10.1")]
+    [BepInPlugin("com.rhythmdr.gameplaypatches", "Rhythm Doctor Gameplay Patches", "1.10.2")]
     [BepInProcess("Rhythm Doctor.exe")]
     public class RDGameplayPatches : BaseUnityPlugin
     {
@@ -239,9 +239,10 @@ namespace RDGameplayPatches
             [HarmonyPatch(typeof(Beat), "LateUpdate")]
             public static bool Prefix(Beat __instance)
             {
-                if (RDC.auto) return true;
-
                 var player = __instance.row.playerProp.GetCurrentPlayer();
+                
+                if (RDC.auto || player == RDPlayer.CPU) return true;
+
                 var isPlayerHolding = false;
                 var audioPos = __instance.conductor.audioPos;
 
@@ -262,7 +263,7 @@ namespace RDGameplayPatches
                     break;
                 }
 
-                if (player != RDPlayer.CPU && (isPlayerHolding || (configFixHoldPseudos.Value && __instance.inputTime <= lastPerfectReleaseTime[(int)player])))
+                if (isPlayerHolding || (configFixHoldPseudos.Value && __instance.inputTime <= lastPerfectReleaseTime[(int)player]))
                 {
                     var isHeldClap = __instance.isHeldClap;
                     var emuState = RDInput.emuStates[(int)player];
