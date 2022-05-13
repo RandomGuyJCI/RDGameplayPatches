@@ -15,6 +15,7 @@
 ### Hits
 - **Very Hard**: Adds a Very Hard difficulty to Rhythm Doctor, changing its hit margins to 25 ms. Configurable per player.
 - **Fix Simultaneous Hit Misses**: Makes the offset of simultaneous hits consistent and fixes a long-standing bug where you miss on some rows.
+- **2P Keyboard Layout**: Changes the keyboard layout for 2P hit keybinds. Includes Dvorak, Colemak, and Workman layouts.
 
 ### Holds
 - **Accurate Release Margins**: Changes the hold release margins to better reflect the player difficulty, including Very Hard difficulty.

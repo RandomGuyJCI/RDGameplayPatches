@@ -18,6 +18,7 @@ namespace RDGameplayPatches
 
         private static ConfigEntry<VeryHardMode> configVeryHardMode;
         private static ConfigEntry<bool> configFixSimultaneousHitMisses;
+        private static ConfigEntry<KeyboardLayout> config2PKeyboardLayout;
         private static ConfigEntry<bool> configAccurateReleaseMargins;
         private static ConfigEntry<bool> configCountOffsetOnRelease;
         private static ConfigEntry<bool> configAntiCheeseHolds;
@@ -35,6 +36,14 @@ namespace RDGameplayPatches
             Both
         }
 
+        private enum KeyboardLayout
+        {
+            QWERTY,
+            Dvorak,
+            Colemak,
+            Workman
+        }
+
         private void Awake()
         {
             configVeryHardMode = Config.Bind("Hits", "VeryHardMode", VeryHardMode.None,
@@ -42,6 +51,9 @@ namespace RDGameplayPatches
 
             configFixSimultaneousHitMisses = Config.Bind("Hits", "FixSimultaneousHitMisses", true,
                 "Makes the offset of simultaneous hits consistent and fixes a long-standing bug where you miss on some rows.");
+
+            config2PKeyboardLayout = Config.Bind("Hits", "2PKeyboardLayout", KeyboardLayout.QWERTY,
+                "Changes the keyboard layout for 2P hit keybinds.");
 
             configAccurateReleaseMargins = Config.Bind("Holds", "AccurateReleaseMargins", false,
                 "Changes the hold release margins to better reflect the player difficulty, including Very Hard.");
@@ -82,6 +94,19 @@ namespace RDGameplayPatches
 
             if (configAccurateReleaseMargins.Value)
                 Harmony.CreateAndPatchAll(typeof(AccurateReleaseMargins));
+
+            switch (config2PKeyboardLayout.Value)
+            {
+                case KeyboardLayout.Dvorak:
+                case KeyboardLayout.Colemak:
+                case KeyboardLayout.Workman:
+                    Harmony.CreateAndPatchAll(typeof(TwoPlayerKeyboardLayout));
+                    break;
+                case KeyboardLayout.QWERTY:
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
 
             if (configAntiCheeseHolds.Value ||
                 configFixAutoHitMisses.Value ||
@@ -173,6 +198,185 @@ namespace RDGameplayPatches
             }
         }
 
+        public static class FixSimultaneousHitMisses
+        {
+            private static double audioPos;
+
+            [HarmonyPrefix]
+            [HarmonyPatch(typeof(scnGame), "UpdateGameplayInput")]
+            public static bool Prefix(scnGame __instance)
+            {
+                audioPos = __instance.conductor.audioPos;
+                return true;
+            }
+
+            [HarmonyTranspiler]
+            [HarmonyPatch(typeof(scrPlayerbox), "SpaceBarEvent")]
+            public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+            {
+                return new CodeMatcher(instructions)
+                    .MatchForward(false, new CodeMatch(OpCodes.Stloc_0))
+                    .Advance(-3)
+                    .SetOpcodeAndAdvance(OpCodes.Nop)
+                    .SetOpcodeAndAdvance(OpCodes.Nop)
+                    .SetAndAdvance(OpCodes.Ldsfld, AccessTools.Field(typeof(FixSimultaneousHitMisses), nameof(audioPos)))
+                    .InstructionEnumeration();
+            }
+        }
+
+        public static class TwoPlayerKeyboardLayout
+        {
+            private static readonly KeyCode[] DvorakScheme2 = {
+                KeyCode.Quote,
+                KeyCode.Comma,
+                KeyCode.Period,
+                KeyCode.P,
+                KeyCode.Y,
+                KeyCode.CapsLock,
+                KeyCode.A,
+                KeyCode.O,
+                KeyCode.E,
+                KeyCode.U,
+                KeyCode.I,
+                KeyCode.LeftShift,
+                KeyCode.Semicolon,
+                KeyCode.Q,
+                KeyCode.J,
+                KeyCode.K,
+                KeyCode.X
+            };
+            
+            private static readonly KeyCode[] DvorakScheme1 = {
+                KeyCode.F,
+                KeyCode.G,
+                KeyCode.C,
+                KeyCode.R,
+                KeyCode.L,
+                KeyCode.Slash,
+                KeyCode.Equals,
+                KeyCode.D,
+                KeyCode.H,
+                KeyCode.T,
+                KeyCode.N,
+                KeyCode.S,
+                KeyCode.Minus,
+                KeyCode.B,
+                KeyCode.M,
+                KeyCode.W,
+                KeyCode.V,
+                KeyCode.Z,
+                KeyCode.RightShift,
+                KeyCode.Return,
+                KeyCode.Space
+            };
+            
+            private static readonly KeyCode[] ColemakScheme2 = {
+                KeyCode.Q,
+                KeyCode.W,
+                KeyCode.F,
+                KeyCode.P,
+                KeyCode.G,
+                KeyCode.CapsLock,
+                KeyCode.A,
+                KeyCode.R,
+                KeyCode.S,
+                KeyCode.T,
+                KeyCode.D,
+                KeyCode.LeftShift,
+                KeyCode.Z,
+                KeyCode.X,
+                KeyCode.C,
+                KeyCode.V,
+                KeyCode.B
+            };
+            
+            private static readonly KeyCode[] ColemakScheme1 = {
+                KeyCode.J,
+                KeyCode.L,
+                KeyCode.U,
+                KeyCode.Y,
+                KeyCode.Semicolon,
+                KeyCode.LeftBracket,
+                KeyCode.RightBracket,
+                KeyCode.H,
+                KeyCode.N,
+                KeyCode.E,
+                KeyCode.I,
+                KeyCode.O,
+                KeyCode.Quote,
+                KeyCode.K,
+                KeyCode.M,
+                KeyCode.Comma,
+                KeyCode.Period,
+                KeyCode.Slash,
+                KeyCode.RightShift,
+                KeyCode.Return,
+                KeyCode.Space
+            };
+            
+            private static readonly KeyCode[] WorkmanScheme2 = {
+                KeyCode.Q,
+                KeyCode.D,
+                KeyCode.R,
+                KeyCode.W,
+                KeyCode.B,
+                KeyCode.CapsLock,
+                KeyCode.A,
+                KeyCode.S,
+                KeyCode.H,
+                KeyCode.T,
+                KeyCode.G,
+                KeyCode.LeftShift,
+                KeyCode.Z,
+                KeyCode.X,
+                KeyCode.M,
+                KeyCode.C,
+                KeyCode.V
+            };
+            
+            private static readonly KeyCode[] WorkmanScheme1 = {
+                KeyCode.J,
+                KeyCode.F,
+                KeyCode.U,
+                KeyCode.P,
+                KeyCode.Semicolon,
+                KeyCode.LeftBracket,
+                KeyCode.RightBracket,
+                KeyCode.Y,
+                KeyCode.N,
+                KeyCode.E,
+                KeyCode.O,
+                KeyCode.I,
+                KeyCode.Quote,
+                KeyCode.K,
+                KeyCode.L,
+                KeyCode.Comma,
+                KeyCode.Period,
+                KeyCode.Slash,
+                KeyCode.RightShift,
+                KeyCode.Return,
+                KeyCode.Space
+            };
+
+            [HarmonyPostfix]
+            [HarmonyPatch(typeof(RDInputType_Keyboard), "currentMainKeys", MethodType.Getter)]
+            public static void Postfix(RDInputType_Keyboard __instance, ref KeyCode[] __result)
+            {
+                switch (config2PKeyboardLayout.Value)
+                {
+                    case KeyboardLayout.Dvorak:
+                        __result = __instance.schemeIndex != 0 ? DvorakScheme2 : DvorakScheme1;
+                        break;
+                    case KeyboardLayout.Colemak:
+                        __result = __instance.schemeIndex != 0 ? ColemakScheme2 : ColemakScheme1;
+                        break;
+                    case KeyboardLayout.Workman:
+                        __result = __instance.schemeIndex != 0 ? WorkmanScheme2 : WorkmanScheme1;
+                        break;
+                }
+            }
+        }
+        
         public static class AccurateReleaseMargins
         {
             [HarmonyPostfix]
@@ -400,32 +604,6 @@ namespace RDGameplayPatches
                     .InsertAndAdvance(
                         new CodeInstruction(OpCodes.Ldarg_3),
                         new CodeInstruction(OpCodes.Brtrue, label))
-                    .InstructionEnumeration();
-            }
-        }
-
-        public static class FixSimultaneousHitMisses
-        {
-            private static double audioPos;
-
-            [HarmonyPrefix]
-            [HarmonyPatch(typeof(scnGame), "UpdateGameplayInput")]
-            public static bool Prefix(scnGame __instance)
-            {
-                audioPos = __instance.conductor.audioPos;
-                return true;
-            }
-
-            [HarmonyTranspiler]
-            [HarmonyPatch(typeof(scrPlayerbox), "SpaceBarEvent")]
-            public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
-            {
-                return new CodeMatcher(instructions)
-                    .MatchForward(false, new CodeMatch(OpCodes.Stloc_0))
-                    .Advance(-3)
-                    .SetOpcodeAndAdvance(OpCodes.Nop)
-                    .SetOpcodeAndAdvance(OpCodes.Nop)
-                    .SetAndAdvance(OpCodes.Ldsfld, AccessTools.Field(typeof(FixSimultaneousHitMisses), nameof(audioPos)))
                     .InstructionEnumeration();
             }
         }
