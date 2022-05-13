@@ -31,7 +31,6 @@
 
 ## TODO
 - [ ] Change hold strip width based on difficulty
-- [ ] Make 2P keyboard locations independent from keyboard layout
 
 ## Installation
 1. Download the latest version of BepInEx 5 **x86** [here](https://github.com/BepInEx/BepInEx/releases). \
