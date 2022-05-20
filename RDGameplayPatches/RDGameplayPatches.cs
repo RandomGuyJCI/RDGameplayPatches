@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Reflection.Emit;
 using BepInEx;
@@ -28,21 +27,8 @@ namespace RDGameplayPatches
         private static ConfigEntry<bool> configChangeRankButtonPerDifficulty;
         private static ConfigEntry<bool> configPlayerOnlyMsOffset;
 
-        private enum VeryHardMode
-        {
-            None,
-            P1,
-            P2,
-            Both
-        }
-
-        private enum KeyboardLayout
-        {
-            QWERTY,
-            Dvorak,
-            Colemak,
-            Workman
-        }
+        private enum VeryHardMode { None, P1, P2, Both }
+        private enum KeyboardLayout { QWERTY, Dvorak, Colemak, Workman }
 
         private void Awake()
         {
@@ -79,38 +65,16 @@ namespace RDGameplayPatches
             configPlayerOnlyMsOffset = Config.Bind("HUD", "PlayerOnlyMsOffset", false,
                 "Changes the status sign behavior to only show player hit offsets when Numerical Hit Judgement is enabled.");
 
-            switch (configVeryHardMode.Value)
-            {
-                case VeryHardMode.P1:
-                case VeryHardMode.P2:
-                case VeryHardMode.Both:
-                    Harmony.CreateAndPatchAll(typeof(VeryHard));
-                    break;
-                case VeryHardMode.None:
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
+            if (configVeryHardMode.Value != VeryHardMode.None)
+                Harmony.CreateAndPatchAll(typeof(VeryHard));
 
             if (configAccurateReleaseMargins.Value)
                 Harmony.CreateAndPatchAll(typeof(AccurateReleaseMargins));
 
-            switch (config2PKeyboardLayout.Value)
-            {
-                case KeyboardLayout.Dvorak:
-                case KeyboardLayout.Colemak:
-                case KeyboardLayout.Workman:
-                    Harmony.CreateAndPatchAll(typeof(TwoPlayerKeyboardLayout));
-                    break;
-                case KeyboardLayout.QWERTY:
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
+            if (config2PKeyboardLayout.Value != KeyboardLayout.QWERTY)
+                Harmony.CreateAndPatchAll(typeof(TwoPlayerKeyboardLayout));
 
-            if (configAntiCheeseHolds.Value ||
-                configFixAutoHitMisses.Value ||
-                configFixHoldPseudos.Value)
+            if (configAntiCheeseHolds.Value || configFixAutoHitMisses.Value || configFixHoldPseudos.Value)
                 Harmony.CreateAndPatchAll(typeof(HoldAutoHitPatch));
 
             if (configCountOffsetOnRelease.Value)
@@ -135,7 +99,7 @@ namespace RDGameplayPatches
         {
             Harmony.UnpatchAll();
         }
-        
+
         public static class VeryHard
         {
             private static readonly bool isP1VeryHard = configVeryHardMode.Value == VeryHardMode.P1 ||
@@ -144,6 +108,7 @@ namespace RDGameplayPatches
             private static readonly bool isP2VeryHard = configVeryHardMode.Value == VeryHardMode.P2 ||
                                                         configVeryHardMode.Value == VeryHardMode.Both;
 
+            // Change player hit margins to 25 ms (threshold before a 2 frame offset)
             [HarmonyPostfix]
             [HarmonyPatch(typeof(scnGame), "GetHitMargin")]
             public static void Postfix(RDPlayer player, ref float __result)
