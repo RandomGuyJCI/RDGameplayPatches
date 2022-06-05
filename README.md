@@ -27,10 +27,11 @@
 ### HUD
 - **Rank Color On Speed Change**: Implements Klyzx's suggestion and changes the rank color in the results depending on the level speed.
 - **Change Rank Button Per Difficulty**: Implements lugi's suggestion and changes the button on the bottom-right corner of the rank screen depending on the player's difficulty.
-- **Player-only Millisecond Offset**: Only shows player hits in the millisecond offset status sign and doesn't show CPU hits.
+- **Hit Judgment Rounding**: Changes the rounding behavior in the hit judgment sign. "Fixed" truncates the offset instead of rounding to the nearest integer, and "Legacy" reverts back to old game behavior which rounds the offset to 3 decimal points.
 
 ## TODO
 - [ ] Change hold strip width based on difficulty
+- [ ] Prevent levels from auto-advancing when pressing while the rank is showing
 
 ## Installation
 1. Download the latest version of BepInEx 5 **x86** [here](https://github.com/BepInEx/BepInEx/releases). \
