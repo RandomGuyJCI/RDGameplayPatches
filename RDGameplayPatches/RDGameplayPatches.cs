@@ -25,11 +25,10 @@ namespace RDGameplayPatches
         private static ConfigEntry<bool> configFixHoldPseudos;
         private static ConfigEntry<bool> configRankColorOnSpeedChange;
         private static ConfigEntry<bool> configChangeRankButtonPerDifficulty;
-        private static ConfigEntry<RoundingBehavior> configHitJudgmentRounding;
+        private static ConfigEntry<bool> configLegacyHitJudgment;
 
         private enum VeryHardMode { None, P1, P2, Both }
         private enum KeyboardLayout { QWERTY, Dvorak, Colemak, Workman }
-        private enum RoundingBehavior{ Default, Fixed, Legacy }
 
         private void Awake()
         {
@@ -63,11 +62,8 @@ namespace RDGameplayPatches
             configChangeRankButtonPerDifficulty = Config.Bind("HUD", "ChangeRankButtonPerDifficulty", true,
                 "Changes the player's button in the rank screen depending on the difficulty.");
 
-            configHitJudgmentRounding = Config.Bind("HUD", "HitJudgmentRounding", RoundingBehavior.Default,
-                "Changes the ms offset rounding behavior in the hit judgment sign.\n" +
-                "Default: Rounds the ms offset to the nearest integer (e.g. 79.667 ms -> 80 ms)\n" +
-                "Fixed: Truncates the ms offset and prevents ambiguity on whether or not a hit is within a miss margin (e.g. 79.667 ms -> 79 ms)\n" +
-                "Legacy: Reverts back to old behavior and rounds the ms offset to 3 decimal points (e.g. 79.667 ms -> 79.667 ms)");
+            configLegacyHitJudgment = Config.Bind("HUD", "LegacyHitJudgment", false,
+                "Reverts back to old behavior and rounds the ms offset in the hit judgment sign to 3 decimal points.");
 
             if (configVeryHardMode.Value != VeryHardMode.None)
                 Harmony.CreateAndPatchAll(typeof(VeryHard));
@@ -93,8 +89,8 @@ namespace RDGameplayPatches
             if (configChangeRankButtonPerDifficulty.Value)
                 Harmony.CreateAndPatchAll(typeof(ChangeRankButtonPerDifficulty));
 
-            if (configHitJudgmentRounding.Value != RoundingBehavior.Default)
-                Harmony.CreateAndPatchAll(typeof(HitJudgmentRounding));
+            if (configLegacyHitJudgment.Value)
+                Harmony.CreateAndPatchAll(typeof(LegacyHitJudgment));
 
             Logger.LogInfo("Plugin enabled!");
         }
@@ -556,7 +552,7 @@ namespace RDGameplayPatches
             }
         }
 
-        public static class HitJudgmentRounding
+        public static class LegacyHitJudgment
         {
             private static float msOffset;
 
@@ -570,39 +566,23 @@ namespace RDGameplayPatches
 
             [HarmonyTranspiler]
             [HarmonyPatch(typeof(scrPlayerbox), "Pulse")]
-            public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator il)
+            public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
             {
-                var codeMatcher = new CodeMatcher(instructions, il)
+
+                return new CodeMatcher(instructions)
                     .End()
-                    .MatchBack(false, new CodeMatch(OpCodes.Call, AccessTools.Method(typeof(Mathf), "RoundToInt")));
-
-                if (configHitJudgmentRounding.Value == RoundingBehavior.Fixed)
-                {
-                    codeMatcher
-                        // Changes "Mathf.RoundToInt(timeOffset * 1000f)" to "(int) timeOffset * 1000f"
-                        .SetOpcodeAndAdvance(OpCodes.Conv_I4)
-                        // Changes "if (num4 >= 0)" to "if (num4 > 0)"
-                        .MatchForward(false, new CodeMatch(OpCodes.Blt))
-                        .SetOpcodeAndAdvance(OpCodes.Ble);
-                }
-
-                if (configHitJudgmentRounding.Value == RoundingBehavior.Legacy)
-                {
-                    codeMatcher
-                        // Rounds to the nearest 3 decimals instead
-                        .Advance(2)
-                        .SetAndAdvance(OpCodes.Ldsflda, AccessTools.Field(typeof(HitJudgmentRounding), nameof(msOffset)))
-                        .InsertAndAdvance(new CodeInstruction(OpCodes.Ldstr, "N3"))
-                        .SetAndAdvance(OpCodes.Call, AccessTools.Method(typeof(float), "ToString", new[] { typeof(string) }))
-                        // Fixes an edge case when the ms offset is in the -0.xxx range
-                        .Advance(1)
-                        .SetAndAdvance(OpCodes.Ldsfld, AccessTools.Field(typeof(HitJudgmentRounding), nameof(msOffset)))
-                        .SetAndAdvance(OpCodes.Ldc_R4, 0f)
-                        .InsertAndAdvance(new CodeInstruction(OpCodes.Nop))
-                        .SetOpcodeAndAdvance(OpCodes.Blt_Un);
-                }
-
-                return codeMatcher.InstructionEnumeration();
+                    .MatchBack(false, new CodeMatch(OpCodes.Call, AccessTools.Method(typeof(int), "ToString")))
+                    // Rounds to the nearest 3 decimals instead
+                    .Advance(-1)
+                    .SetAndAdvance(OpCodes.Ldsflda, AccessTools.Field(typeof(LegacyHitJudgment), nameof(msOffset)))
+                    .InsertAndAdvance(new CodeInstruction(OpCodes.Ldstr, "N3"))
+                    .SetAndAdvance(OpCodes.Call, AccessTools.Method(typeof(float), "ToString", new[] { typeof(string) }))
+                    // Fixes an edge case when the ms offset is in the -0.xxx range
+                    .Advance(1)
+                    .SetAndAdvance(OpCodes.Ldsfld, AccessTools.Field(typeof(LegacyHitJudgment), nameof(msOffset)))
+                    .SetAndAdvance(OpCodes.Ldc_R4, 0f)
+                    .SetOpcodeAndAdvance(OpCodes.Blt_Un)
+                    .InstructionEnumeration();
             }
         }
     }

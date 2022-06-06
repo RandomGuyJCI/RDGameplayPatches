@@ -27,7 +27,7 @@
 ### HUD
 - **Rank Color On Speed Change**: Implements Klyzx's suggestion and changes the rank color in the results depending on the level speed.
 - **Change Rank Button Per Difficulty**: Implements lugi's suggestion and changes the button on the bottom-right corner of the rank screen depending on the player's difficulty.
-- **Hit Judgment Rounding**: Changes the rounding behavior in the hit judgment sign. "Fixed" truncates the offset instead of rounding to the nearest integer, and "Legacy" reverts back to old game behavior which rounds the offset to 3 decimal points.
+- **Legacy Hit Judgment**: Reverts back to old game behavior which rounds the hit judgment millisecond offset to 3 decimal points.
 
 ## TODO
 - [ ] Change hold strip width based on difficulty
