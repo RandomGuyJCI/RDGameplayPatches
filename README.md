@@ -32,6 +32,7 @@
 ## TODO
 - [ ] Change hold strip width based on difficulty
 - [ ] Prevent levels from auto-advancing when pressing while the rank is showing
+- [ ] Make multi-beat hits count as a single hit when it comes to offset
 
 ## Installation
 1. Download the latest version of BepInEx 5 **x86** [here](https://github.com/BepInEx/BepInEx/releases). \
