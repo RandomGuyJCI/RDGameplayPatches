@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection.Emit;
 using BepInEx;
@@ -9,14 +10,13 @@ using UnityEngine.UI;
 
 namespace RDGameplayPatches
 {
-    [BepInPlugin("com.rhythmdr.gameplaypatches", "Rhythm Doctor Gameplay Patches", "1.12.1")]
+    [BepInPlugin("com.rhythmdr.gameplaypatches", "Rhythm Doctor Gameplay Patches", "1.12.2")]
     [BepInProcess("Rhythm Doctor.exe")]
     public class RDGameplayPatches : BaseUnityPlugin
     {
         private const string assetsPath = "BepInEx/plugins/RDGameplayPatches/Assets/";
 
         private static ConfigEntry<VeryHardMode> configVeryHardMode;
-        private static ConfigEntry<bool> configFixSimultaneousHitMisses;
         private static ConfigEntry<KeyboardLayout> config2PKeyboardLayout;
         private static ConfigEntry<bool> configAccurateReleaseMargins;
         private static ConfigEntry<bool> configCountOffsetOnRelease;
@@ -34,9 +34,6 @@ namespace RDGameplayPatches
         {
             configVeryHardMode = Config.Bind("Hits", "VeryHardMode", VeryHardMode.None,
                 "Sets the player(s) in which Very Hard difficulty is enabled. Not affected by the difficulty setting in Rhythm Doctor when enabled.");
-
-            configFixSimultaneousHitMisses = Config.Bind("Hits", "FixSimultaneousHitMisses", true,
-                "Makes the offset of simultaneous hits consistent and fixes a long-standing bug where you miss on some rows.");
 
             config2PKeyboardLayout = Config.Bind("Hits", "2PKeyboardLayout", KeyboardLayout.QWERTY,
                 "Changes the keyboard layout for 2P hit keybinds.");
@@ -67,9 +64,6 @@ namespace RDGameplayPatches
 
             if (configVeryHardMode.Value != VeryHardMode.None)
                 Harmony.CreateAndPatchAll(typeof(VeryHard));
-
-            if (configFixSimultaneousHitMisses.Value)
-                Harmony.CreateAndPatchAll(typeof(FixSimultaneousHitMisses));
 
             if (config2PKeyboardLayout.Value != KeyboardLayout.QWERTY)
                 Harmony.CreateAndPatchAll(typeof(TwoPlayerKeyboardLayout));
@@ -160,32 +154,6 @@ namespace RDGameplayPatches
                         new CodeInstruction(OpCodes.Brfalse_S, breakLabel));
 
                 return codeMatcher.InstructionEnumeration();
-            }
-        }
-
-        public static class FixSimultaneousHitMisses
-        {
-            private static double audioPos;
-
-            [HarmonyPrefix]
-            [HarmonyPatch(typeof(scnGame), "UpdateGameplayInput")]
-            public static bool Prefix(scnGame __instance)
-            {
-                audioPos = __instance.conductor.audioPos;
-                return true;
-            }
-
-            [HarmonyTranspiler]
-            [HarmonyPatch(typeof(scrPlayerbox), "SpaceBarEvent")]
-            public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
-            {
-                return new CodeMatcher(instructions)
-                    .MatchForward(false, new CodeMatch(OpCodes.Stloc_0))
-                    .Advance(-3)
-                    .SetOpcodeAndAdvance(OpCodes.Nop)
-                    .SetOpcodeAndAdvance(OpCodes.Nop)
-                    .SetAndAdvance(OpCodes.Ldsfld, AccessTools.Field(typeof(FixSimultaneousHitMisses), nameof(audioPos)))
-                    .InstructionEnumeration();
             }
         }
 
