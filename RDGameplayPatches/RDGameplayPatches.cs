@@ -429,8 +429,7 @@ namespace RDGameplayPatches
 
                 return false;
             }
-
-            // Set all auto-hit frame offsets to 0
+            
             [HarmonyTranspiler]
             [HarmonyPatch(typeof(scrPlayerbox), "Pulse")]
             public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator il)
@@ -439,15 +438,25 @@ namespace RDGameplayPatches
 
                 if (configFixAutoHitMisses.Value)
                 {
-                    Label label;
+                    Label frameOffsetLabel;
+                    Label hitJudgmentLabel;
                     codeMatcher
+                        // Set all auto-hit frame offsets to 0
                         .MatchForward(false,
                             new CodeMatch(OpCodes.Ldsfld, AccessTools.Field(typeof(GC), "showAbsoluteOffsets")))
                         .Advance(7)
-                        .CreateLabelAt(codeMatcher.Pos + 2, out label)
+                        .CreateLabelAt(codeMatcher.Pos + 2, out frameOffsetLabel)
                         .InsertAndAdvance(
                             new CodeInstruction(OpCodes.Ldarg_3),
-                            new CodeInstruction(OpCodes.Brtrue, label));
+                            new CodeInstruction(OpCodes.Brtrue, frameOffsetLabel))
+                        // Don't show auto-hits in the hit judgment sign
+                        .End()
+                        .CreateLabelAt(codeMatcher.Pos - 1, out hitJudgmentLabel)
+                        .MatchBack(false,
+                            new CodeMatch(OpCodes.Ldsfld, AccessTools.Field(typeof(GC), "d_showMarginsNumerically")))
+                        .InsertAndAdvance(
+                            new CodeInstruction(OpCodes.Ldarg_3),
+                            new CodeInstruction(OpCodes.Brtrue, hitJudgmentLabel));
                 }
 
                 return codeMatcher.InstructionEnumeration();
