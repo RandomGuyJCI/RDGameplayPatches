@@ -27,6 +27,7 @@
 - **Rank Color On Speed Change**: Implements Klyzx's suggestion and changes the rank color in the results depending on the level speed.
 - **Change Rank Button Per Difficulty**: Implements lugi's suggestion and changes the button on the bottom-right corner of the rank screen depending on the player's difficulty.
 - **Legacy Hit Judgment**: Reverts back to old game behavior which rounds the hit judgment millisecond offset to 3 decimal points.
+- **Status Sign Transparency**: Sets the transparency of the status sign. 1 is fully opaque while 0 is fully transparent.
 
 ## TODO
 - [ ] Change hold strip width based on difficulty
