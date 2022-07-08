@@ -26,6 +26,7 @@ namespace RDGameplayPatches
         private static ConfigEntry<bool> configRankColorOnSpeedChange;
         private static ConfigEntry<bool> configChangeRankButtonPerDifficulty;
         private static ConfigEntry<bool> configLegacyHitJudgment;
+        private static ConfigEntry<float> configStatusSignTransparency;
 
         private enum VeryHardMode { None, P1, P2, Both }
         private enum KeyboardLayout { QWERTY, Dvorak, Colemak, Workman }
@@ -62,6 +63,9 @@ namespace RDGameplayPatches
             configLegacyHitJudgment = Config.Bind("HUD", "LegacyHitJudgment", false,
                 "Reverts back to old behavior and rounds the ms offset in the hit judgment sign to 3 decimal points.");
 
+            configStatusSignTransparency = Config.Bind("HUD", "StatusSignTransparency", 1.0f,
+                new ConfigDescription("Sets the transparency of the status sign.", new AcceptableValueRange<float>(0f, 1f)));
+
             if (configVeryHardMode.Value != VeryHardMode.None)
                 Harmony.CreateAndPatchAll(typeof(VeryHard));
 
@@ -85,6 +89,9 @@ namespace RDGameplayPatches
 
             if (configLegacyHitJudgment.Value)
                 Harmony.CreateAndPatchAll(typeof(LegacyHitJudgment));
+
+            if (configStatusSignTransparency.Value != 1f)
+                Harmony.CreateAndPatchAll(typeof(TransparentStatusSign));
 
             Logger.LogInfo("Plugin enabled!");
         }
@@ -560,6 +567,20 @@ namespace RDGameplayPatches
                     .SetAndAdvance(OpCodes.Ldc_R4, 0f)
                     .SetOpcodeAndAdvance(OpCodes.Blt_Un)
                     .InstructionEnumeration();
+            }
+        }
+
+        public class TransparentStatusSign
+        {
+
+            [HarmonyPostfix]
+            [HarmonyPatch(typeof(LEDSign), "Awake")]
+            public static void Postfix(LEDSign __instance)
+            {
+                var images = __instance.gameObject.GetComponentsInChildren<Image>(true);
+                
+                foreach (var image in images)
+                    image.color = new Color(1f, 1f, 1f, configStatusSignTransparency.Value);
             }
         }
     }
