@@ -10,7 +10,7 @@ using UnityEngine.UI;
 
 namespace RDGameplayPatches
 {
-    [BepInPlugin("com.rhythmdr.gameplaypatches", "Rhythm Doctor Gameplay Patches", "1.13.0")]
+    [BepInPlugin("com.rhythmdr.gameplaypatches", "Rhythm Doctor Gameplay Patches", "1.13.1")]
     [BepInProcess("Rhythm Doctor.exe")]
     public class RDGameplayPatches : BaseUnityPlugin
     {
@@ -362,7 +362,7 @@ namespace RDGameplayPatches
                 if (GC.d_showMarginsNumerically && !cpuTriggered)
                 {
                     var timeOffsetInMilliseconds = timeOffset * 1000f;
-                    var offsetMs = timeOffsetInMilliseconds.ToString("N3");
+                    var offsetMs = configLegacyHitJudgment.Value ? timeOffsetInMilliseconds.ToString("N3") : ((int) timeOffsetInMilliseconds).ToString();
 
                     if (timeOffsetInMilliseconds >= 0)
                         offsetMs = "+" + offsetMs;
@@ -552,7 +552,6 @@ namespace RDGameplayPatches
             [HarmonyPatch(typeof(scrPlayerbox), "Pulse")]
             public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
             {
-
                 return new CodeMatcher(instructions)
                     .End()
                     .MatchBack(false, new CodeMatch(OpCodes.Call, AccessTools.Method(typeof(int), "ToString")))
@@ -572,7 +571,6 @@ namespace RDGameplayPatches
 
         public class TransparentStatusSign
         {
-
             [HarmonyPostfix]
             [HarmonyPatch(typeof(LEDSign), "Awake")]
             public static void Postfix(LEDSign __instance)
