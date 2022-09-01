@@ -87,7 +87,7 @@
     </PropertyGroup>
 
     <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-        <Exec Command="copy /Y &quot;$(TargetDir)$(ProjectName).dll&quot; &quot;C:\Program Files (x86)\Steam\steamapps\common\Rhythm Doctor\BepInEx\scripts\$(ProjectName).dll&quot;" />
+        <Exec Command="copy /Y &quot;$(TargetDir)$(ProjectName).dll&quot; &quot;$(MSBuildProgramFiles32)\Steam\steamapps\common\Rhythm Doctor\BepInEx\scripts\$(ProjectName).dll&quot;" />
         <Exec Command="if $(ConfigurationName) == Deploy (copy /Y &quot;$(TargetDir)$(ProjectName).dll&quot; &quot;$(ProjectDir)bin\BepInEx\plugins\$(ProjectName)\$(ProjectName).dll&quot;)" />
         <Exec Command="if $(ConfigurationName) == Deploy (powershell Compress-Archive -Path '$(ProjectDir)\bin\BepInEx\' -DestinationPath '$(ProjectDir)bin\$(ProjectName)_x.x.x.zip' -Force)" />
     </Target>
