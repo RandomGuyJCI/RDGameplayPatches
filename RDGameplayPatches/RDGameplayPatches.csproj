@@ -12,6 +12,7 @@
         <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
         <FileAlignment>512</FileAlignment>
         <Deterministic>true</Deterministic>
+        <LangVersion>latest</LangVersion>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
         <DebugSymbols>true</DebugSymbols>
@@ -87,8 +88,9 @@
     </PropertyGroup>
 
     <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+        <MakeDir Directories="$(ProjectDir)bin\BepInEx\plugins\$(ProjectName)" Condition="!Exists('$(ProjectDir)bin\BepInEx\plugins\$(ProjectName)')" />
         <Exec Command="copy /Y &quot;$(TargetDir)$(ProjectName).dll&quot; &quot;$(MSBuildProgramFiles32)\Steam\steamapps\common\Rhythm Doctor\BepInEx\scripts\$(ProjectName).dll&quot;" />
         <Exec Command="if $(ConfigurationName) == Deploy (copy /Y &quot;$(TargetDir)$(ProjectName).dll&quot; &quot;$(ProjectDir)bin\BepInEx\plugins\$(ProjectName)\$(ProjectName).dll&quot;)" />
-        <Exec Command="if $(ConfigurationName) == Deploy (powershell Compress-Archive -Path '$(ProjectDir)\bin\BepInEx\' -DestinationPath '$(ProjectDir)bin\$(ProjectName)_x.x.x.zip' -Force)" />
+        <Exec Command="if $(ConfigurationName) == Deploy (powershell Compress-Archive -Path '$(ProjectDir)bin\BepInEx\' -DestinationPath '$(ProjectDir)bin\$(ProjectName)_x.x.x.zip' -Force)" />
     </Target>
 </Project>
