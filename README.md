@@ -12,20 +12,22 @@
 
 ## Features
 
+*Note: Some of these features have been implemented in the game. These features have been crossed out.*
+
 ### Hits
 - **Very Hard**: Adds a Very Hard difficulty to Rhythm Doctor, changing its hit margins to 25 ms. Configurable per player.
-- **2P Keyboard Layout**: Changes the keyboard layout for 2P hit keybinds. Includes Dvorak, Colemak, and Workman layouts.
+- ~~**2P Keyboard Layout**: Changes the keyboard layout for 2P hit keybinds. Includes Dvorak, Colemak, and Workman layouts.~~
 
 ### Holds
 - **Accurate Release Margins**: Changes the hold release margins to better reflect the player difficulty, including Very Hard difficulty.
-- **Count Offset On Release**: Shows the millisecond offset and counts the number of offset frames on hold releases.
-- **Anti-cheese Holds**: Prevents you from abusing hold auto-hit mechanics by automatically releasing late holds and not letting beats later than the release be auto-hit.
-- **Fix Auto-Hit Misses**: Fixes a long-standing issue where hold auto-hits completely miss some beats.
-- **Fix Hold Pseudos**: Always auto-hits beats that land at the same time as a hold's release, even when released slightly early. *Recommended with Fix Auto-Hit Misses enabled.*
+- ~~**Count Offset On Release**: Shows the millisecond offset and counts the number of offset frames on hold releases.~~
+- ~~**Anti-cheese Holds**: Prevents you from abusing hold auto-hit mechanics by automatically releasing late holds and not letting beats later than the release be auto-hit.~~
+- ~~**Fix Auto-Hit Misses**: Fixes a long-standing issue where hold auto-hits completely miss some beats.~~
+- ~~**Fix Hold Pseudos**: Always auto-hits beats that land at the same time as a hold's release, even when released slightly early. *Recommended with Fix Auto-Hit Misses enabled.*~~
 
 ### HUD
-- **Rank Color On Speed Change**: Implements Klyzx's suggestion and changes the rank color in the results depending on the level speed.
-- **Change Rank Button Per Difficulty**: Implements lugi's suggestion and changes the button on the bottom-right corner of the rank screen depending on the player's difficulty.
+- ~~**Rank Color On Speed Change**: Implements Klyzx's suggestion and changes the rank color in the results depending on the level speed.~~
+- ~~**Change Rank Button Per Difficulty**: Implements lugi's suggestion and changes the button on the bottom-right corner of the rank screen depending on the player's difficulty.~~
 - **Legacy Hit Judgment**: Reverts back to old game behavior which rounds the hit judgment millisecond offset to 3 decimal points.
 - **Status Sign Transparency**: Sets the transparency of the status sign. 1 is fully opaque while 0 is fully transparent.
 
