@@ -88,9 +88,10 @@
     </PropertyGroup>
 
     <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-        <MakeDir Directories="$(ProjectDir)bin\BepInEx\plugins\$(ProjectName)" Condition="!Exists('$(ProjectDir)bin\BepInEx\plugins\$(ProjectName)')" />
         <Exec Command="copy /Y &quot;$(TargetDir)$(ProjectName).dll&quot; &quot;$(MSBuildProgramFiles32)\Steam\steamapps\common\Rhythm Doctor\BepInEx\scripts\$(ProjectName).dll&quot;" />
-        <Exec Command="if $(ConfigurationName) == Deploy (copy /Y &quot;$(TargetDir)$(ProjectName).dll&quot; &quot;$(ProjectDir)bin\BepInEx\plugins\$(ProjectName)\$(ProjectName).dll&quot;)" />
+        <RemoveDir Directories="$(ProjectDir)bin\BepInEx\" />
+        <MakeDir Directories="$(ProjectDir)bin\BepInEx\plugins\" />
+        <Exec Command="if $(ConfigurationName) == Deploy (copy /Y &quot;$(TargetDir)$(ProjectName).dll&quot; &quot;$(ProjectDir)bin\BepInEx\plugins\$(ProjectName).dll&quot;)" />
         <Exec Command="if $(ConfigurationName) == Deploy (powershell Compress-Archive -Path '$(ProjectDir)bin\BepInEx\' -DestinationPath '$(ProjectDir)bin\$(ProjectName)_x.x.x.zip' -Force)" />
     </Target>
 </Project>

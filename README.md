@@ -3,7 +3,7 @@
 [![Discord](https://img.shields.io/discord/296802696243970049?color=%235865F2&label=discord&logo=Discord&logoColor=%23ffffff)](https://discord.gg/rhythmdr)
 
 <div align="center">
-  <img title="Thanks to WolfPlay013 for making this logo!" src="https://cdn.discordapp.com/attachments/298297906509774848/970402063097954376/bgpatch.png" width=128px>
+  <img title="Thanks to WolfPlay013 for making this logo!" src="https://i.imgur.com/Ja4ukbG.png" width=128px>
   <h1>RDGameplayPatches</h1>
   <i>A <a href="https://github.com/BepInEx/BepInEx">BepInEx</a> plugin that adds several patches to <a href="https://rhythmdr.com">Rhythm Doctor</a> gameplay.</i>
 </div>
@@ -13,32 +13,21 @@
 ## Features
 
 ### Hits
-- **Very Hard**: Adds a Very Hard difficulty to Rhythm Doctor, changing its hit margins to 25 ms. Configurable per player.
-- **2P Keyboard Layout**: Changes the keyboard layout for 2P hit keybinds. Includes Dvorak, Colemak, and Workman layouts.
+- **Very Hard**: Adds a Very Hard difficulty to Rhythm Doctor, changing the hit margins to 25 ms (0 frames). Configurable per player.
 
 ### Holds
-- **Accurate Release Margins**: Changes the hold release margins to better reflect the player difficulty, including Very Hard difficulty.
-- **Count Offset On Release**: Shows the millisecond offset and counts the number of offset frames on hold releases.
-- **Anti-cheese Holds**: Prevents you from abusing hold auto-hit mechanics by automatically releasing late holds and not letting beats later than the release be auto-hit.
-- **Fix Auto-Hit Misses**: Fixes a long-standing issue where hold auto-hits completely miss some beats.
-- **Fix Hold Pseudos**: Always auto-hits beats that land at the same time as a hold's release, even when released slightly early. *Recommended with Fix Auto-Hit Misses enabled.*
+- **Accurate Release Margins**: Changes the hold release margins to be the same as the hit margins. Only affects Very Easy, Hard, and Very Hard difficulties.
+- **Count Offset On Release**: Makes hold releases count towards offset frames.
 
 ### HUD
-- **Rank Color On Speed Change**: Implements Klyzx's suggestion and changes the rank color in the results depending on the level speed.
-- **Change Rank Button Per Difficulty**: Implements lugi's suggestion and changes the button on the bottom-right corner of the rank screen depending on the player's difficulty.
-- **Legacy Hit Judgment**: Reverts back to old game behavior which rounds the hit judgment millisecond offset to 3 decimal points.
-- **Status Sign Transparency**: Sets the transparency of the status sign. 1 is fully opaque while 0 is fully transparent.
-
-## TODO
-- [ ] Change hold strip width based on difficulty
-- [ ] Make multi-beat hits count as a single hit when it comes to offset
-- [ ] Fix Smart Judgment not working for hold hits
+- **Legacy Hit Judgment**: Reverts back the rounding behavior of the millisecond offset status sign to 3 decimal points rather than a whole number.
+- **Status Sign Transparency**: Sets the transparency percentage of the status sign while in a level. 1 is fully opaque while 0 is fully transparent.
 
 ## Installation
-1. Download the latest version of **BepInEx 5 x86** [here](https://github.com/BepInEx/BepInEx/releases/latest). \
-**Make sure you use the x86 version of BepInEx 5!** RD is x86 so the x64 version of BepInEx will not work, and BepInEx 6 is currently not yet compatible with BepInEx 5 mods.
-2. Unzip the file into your RD folder. You should have a `winhttp.dll`, `doorstop_config.ini`, and `BepInEx` folder next to Rhythm Doctor.exe.
-3. Launch RD once to generate BepInEx files.
+1. Download the latest version of **BepInEx 5** [here](https://github.com/BepInEx/BepInEx/releases/latest). \
+**NOTE: Make sure you download the appropriate version of BepInEx 5 for your system!** RD uses x64 by default, but it can also be installed in x86 for 32-bit systems. When in doubt, download BepInEx 5 x64 first. BepInEx 6 is currently not yet compatible with BepInEx 5 mods.
+2. Unzip the file into your RD folder. You should have a `winhttp.dll`, `doorstop_config.ini`, and `BepInEx` folder next to `Rhythm Doctor.exe`.
+3. Launch RD once to generate the necessary BepInEx files.
 4. Download the latest version of the mod from [here](https://github.com/RandomGuyJCI/RDGameplayPatches/releases). It should be named `RDGameplayPatches_1.x.x.zip`.
 5. Unzip the file you downloaded into your Rhythm Doctor installation folder. You should now have a file at `BepInEx/plugins/RDGameplayPatches/RDGameplayPatches.dll`.
 6. Launch the game, and the plugin should automatically enable.
