@@ -24,12 +24,12 @@
 - **Status Sign Transparency**: Sets the transparency percentage of the status sign while in a level. 1 is fully opaque while 0 is fully transparent.
 
 ## Installation
-1. Download the latest version of **BepInEx 5** [here](https://github.com/BepInEx/BepInEx/releases/latest). \
+1. Download the latest version of **BepInEx 5** [here](https://github.com/BepInEx/BepInEx/releases/latest).\
 **NOTE: Make sure you download the appropriate version of BepInEx 5 for your system!** RD uses x64 by default, but it can also be installed in x86 for 32-bit systems. When in doubt, download BepInEx 5 x64 first. BepInEx 6 is currently not yet compatible with BepInEx 5 mods.
-2. Unzip the file into your RD folder. You should have a `winhttp.dll`, `doorstop_config.ini`, and `BepInEx` folder next to `Rhythm Doctor.exe`.
-3. Launch RD once to generate the necessary BepInEx files.
-4. Download the latest version of the mod from [here](https://github.com/RandomGuyJCI/RDGameplayPatches/releases). It should be named `RDGameplayPatches_1.x.x.zip`.
-5. Unzip the file you downloaded into your Rhythm Doctor installation folder. You should now have a file at `BepInEx/plugins/RDGameplayPatches/RDGameplayPatches.dll`.
+2. Unzip the installation file into your RD folder. You should have a `winhttp.dll` file, `doorstop_config.ini` file, and `BepInEx` folder next to `Rhythm Doctor.exe`.
+3. Launch RD once to generate the rest of the necessary BepInEx files.
+4. Download the latest version of the mod from [here](https://github.com/RandomGuyJCI/RDGameplayPatches/releases/latest). It should be named `RDGameplayPatches_1.x.x.zip`.
+5. Unzip the file you downloaded into your Rhythm Doctor installation folder. You should now have a file at `BepInEx/plugins/RDGameplayPatches.dll`.
 6. Launch the game, and the plugin should automatically enable.
 7. Configure the plugin as needed in `BepInEx/config/com.rhythmdr.gameplaypatches.cfg`.
 8. **Optional:** Install the [BepInEx Configuration Manager](https://github.com/BepInEx/BepInEx.ConfigurationManager) to configure the mod with a GUI by pressing `F1`.
